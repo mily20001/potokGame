@@ -1,0 +1,8 @@
+{
+    "events":
+    {
+        "exit": "node ./scripts/notify.js 'Dragons of the Universe development' 'Server has been restarted'"
+    },
+    "verbose": true,
+    "ignore": ["*.log", ".idea/", "frontend/", "build/frontend"]
+}

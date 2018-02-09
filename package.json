@@ -1,0 +1,45 @@
+{
+  "name": "dragons-of-the-universe",
+  "version": "0.0.1",
+  "description": "Dragons of the Universe",
+  "files": [
+    "backend",
+    "frontend"
+  ],
+  "config" : { "remoteUserHostPath" : "potok@potok.atthost24.pl:/home/potok/websites/gra" },
+  "scripts": {
+    "start-server": "scripts/server.sh",
+    "dev-autobuild-frontend": "node_modules/.bin/webpack --hide-modules --watch",
+    "build-frontend": "node_modules/.bin/webpack -p --progress --hide-modules",
+    "deploy": "scp -r build/* $npm_package_config_remoteUserHostPath"
+  },
+  "devDependencies": {
+    "babel-core": "^6.26.0",
+    "babel-loader": "^7.1.2",
+    "babel-preset-env": "^1.6.1",
+    "babel-preset-react": "^6.24.1",
+    "css-loader": "^0.28.9",
+    "eslint": "^3.19.0",
+    "eslint-config-airbnb": "^15.0.1",
+    "eslint-plugin-import": "^2.3.0",
+    "eslint-plugin-jsx-a11y": "^5.0.3",
+    "eslint-plugin-react": "^7.0.1",
+    "extract-text-webpack-plugin": "^3.0.2",
+    "file-loader": "^1.1.6",
+    "mkdirp": "^0.5.1",
+    "nodemon": "^1.11.0",
+    "sass-loader": "^6.0.6",
+    "style-loader": "^0.20.1",
+    "webpack": "^3.10.0"
+  },
+  "dependencies": {
+    "node-notifier": "^5.1.2",
+    "node-sass": "^4.5.3",
+    "prop-types": "^15.5.10",
+    "react": "^15.6.0",
+    "react-bootstrap": "^0.31.0",
+    "react-dom": "^15.6.0",
+    "react-router-dom": "^4.1.1",
+    "websocket": "^1.0.24"
+  }
+}
