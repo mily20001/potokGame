@@ -9,3 +9,5 @@ build/frontend/css/
 build/frontend/js/
 build/*.js
 *.tmp-browserify*
+dump*.sql
+backend/config.js
