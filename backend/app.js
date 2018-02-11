@@ -2,6 +2,7 @@ import http from 'http';
 import fs from 'fs';
 
 import CONFIG from './config';
+import DatabaseManager from './DatabaseManager';
 
 const filesMap = {
     '/': { file: 'index.html', code: 200, headers: { 'Content-Type': 'text/html; charset=utf-8' } },
@@ -11,6 +12,12 @@ const filesMap = {
     '/js/main.js': { file: '', code: 200, headers: { 'Content-Type': 'text/javascript' } },
     '/css/main.bundle.css': { file: '', code: 200, headers: { 'Content-Type': 'text/css' } },
 };
+
+const databaseManager = new DatabaseManager();
+
+// databaseManager.addPlayer('admin', 'milosz', 'Miłosz', 'D.', () => {});
+// databaseManager.login('admin', 'milosz', () => {});
+databaseManager.getUserFromCookie('cc0aa36fac252b77a69a810451fa4caa339522051e91ff25e9065ea97c49de3817f3aa9cd97643760592aa611079cb74', ()=>{});
 
 const server = http.createServer((req, res) => {
     if (req.headers['x-forwarded-protocol'] === 'http') {

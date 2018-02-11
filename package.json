@@ -6,7 +6,9 @@
     "backend",
     "frontend"
   ],
-  "config" : { "remoteUserHostPath" : "potok@potok.atthost24.pl:/home/potok/websites/gra" },
+  "config": {
+    "remoteUserHostPath": "potok@potok.atthost24.pl:/home/potok/websites/gra"
+  },
   "scripts": {
     "start-server": "scripts/server.sh",
     "dev-autobuild-frontend": "node_modules/.bin/webpack --hide-modules --watch",
@@ -33,6 +35,8 @@
     "webpack": "^3.10.0"
   },
   "dependencies": {
+    "bcrypt": "^1.0.3",
+    "mysql": "^2.15.0",
     "node-notifier": "^5.1.2",
     "node-sass": "^4.5.3",
     "prop-types": "^15.5.10",

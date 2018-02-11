@@ -3,5 +3,7 @@
 export default {
     dbPassword: '',
     dbUsername: '',
+    dbName: '',
+    dbHost: 'localhost',
     httpBasePath: 'frontend',
 };
