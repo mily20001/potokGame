@@ -5,6 +5,8 @@ import crypto from 'crypto';
 import CONFIG from './config';
 import errorCodes from './errorCodes';
 
+// TODO prevent connection from timeouting
+
 export default class DatabaseManager {
     constructor() {
         this.connection = mysql.createConnection({
@@ -81,7 +83,7 @@ export default class DatabaseManager {
     }
 
     login(username, password, callback) {
-        this.connection.query(`SELECT id, password from Players WHERE username = ${mysql.escape(username)}`, (err, results) => {
+        this.connection.query(`SELECT * from Players WHERE username = ${mysql.escape(username)}`, (err, results) => {
             if (err) {
                 console.error(err);
                 callback({ err });
@@ -92,7 +94,7 @@ export default class DatabaseManager {
                 console.error(`Error while logging in user ${username}: invalid length: ${results.length}`);
                 callback({
                     err: new Error(`Error while logging in user ${username}: invalid username`),
-                    errCode: errorCodes.invalidUsername,
+                    errCode: errorCodes.invalidUsernameOrPassword,
                 });
                 return;
             }
@@ -108,7 +110,7 @@ export default class DatabaseManager {
                     console.warn(`Invalid password for ${username}`);
                     callback({
                         err: new Error(`Invalid password for ${username}`),
-                        errCode: errorCodes.invalidPassword,
+                        errCode: errorCodes.invalidUsernameOrPassword,
                     });
                     return;
                 }
@@ -129,7 +131,9 @@ export default class DatabaseManager {
                             return;
                         }
 
-                        callback(token);
+                        const loggedUser = { ...results[0], password: undefined };
+
+                        callback({ token, user: loggedUser });
                     });
                 });
             });

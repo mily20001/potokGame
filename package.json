@@ -42,6 +42,7 @@
     "node-notifier": "^5.1.2",
     "node-sass": "^4.5.3",
     "prop-types": "^15.5.10",
+    "qs": "^6.5.1",
     "react": "^15.6.0",
     "react-bootstrap": "^0.31.0",
     "react-dom": "^15.6.0",

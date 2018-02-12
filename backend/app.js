@@ -1,5 +1,6 @@
 import http from 'http';
 import fs from 'fs';
+import qs from 'qs';
 
 import CONFIG from './config';
 import DatabaseManager from './DatabaseManager';
@@ -24,7 +25,7 @@ const server = http.createServer((req, res) => {
         console.log('upgrading to https');
         res.writeHead(301, { Location: `https://${req.headers.host}${req.url}` });
         res.end();
-    } else {
+    } else if (req.method.toUpperCase() === 'GET') {
         console.log('Request:', req.url);
         if (filesMap[req.url] !== undefined) {
             res.writeHead(filesMap[req.url].code, filesMap[req.url].headers);
@@ -41,6 +42,46 @@ const server = http.createServer((req, res) => {
             res.writeHead(404, { 'Content-Type': 'text/html' });
             res.end(fs.readFileSync(`${CONFIG.httpBasePath}/404.html`));
         }
+    } else if (req.method.toUpperCase() === 'POST') {
+        let body = '';
+
+        req.on('data', (data) => {
+            body += data;
+            if (body.length > 1e6) { req.connection.destroy(); }
+        });
+
+        req.on('end', () => {
+            const post = qs.parse(body);
+            // console.log(post);
+
+            if (req.url === '/login') {
+                if (post.username !== undefined && post.password !== undefined) {
+                    databaseManager.login(post.username, post.password, (result) => {
+                        if (result.err === undefined
+                            && result.token !== undefined
+                            && result.user !== undefined
+                        ) {
+                            res.writeHead(200, {
+                                'Set-Cookie': `token=${result.token};` +
+                                    `Expires=${(new Date('2020')).toUTCString()};` +
+                                    'Http-only',
+                            });
+                            res.end(JSON.stringify({ user: result.user }));
+                        } else if (result.err !== undefined) {
+                            res.end(JSON.stringify({ err: result.errCode }));
+                        } else {
+                            res.end(JSON.stringify({ err: 'undefined login result error' }));
+                        }
+                    });
+                } else {
+                    res.writeHead(400);
+                    res.end();
+                }
+            } else {
+                res.writeHead(400);
+                res.end();
+            }
+        });
     }
 });
 server.listen(3000);

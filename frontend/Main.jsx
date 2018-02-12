@@ -2,9 +2,8 @@ import React, { Component } from 'react';
 import {
     Router,
     Route,
-    Link,
 } from 'react-router-dom';
-import createBrowserHistory from 'history/createBrowserHistory'
+import createBrowserHistory from 'history/createBrowserHistory';
 
 import App from './App';
 import Admin from './Admin';
@@ -25,8 +24,13 @@ export default class Main extends Component {
     }
 
     setUser(user) {
+        console.log(user);
         if (user === {}) {
             this.history.push('/login');
+        } else if (user.role === 'admin') {
+            this.history.push('/admin');
+        } else if (user.role === 'player') {
+            this.history.push('/');
         }
 
         this.setState({ user });
@@ -38,7 +42,11 @@ export default class Main extends Component {
                 <div className="container fullpage-container">
                     <Route exact path="/" component={App} />
                     <Route path="/admin" render={() => <Admin user={this.state.user} />} />
-                    <Route exact path="/login" render={() => <Login setUser={this.setUser} history={this.history} />} />
+                    <Route
+                        exact
+                        path="/login"
+                        render={() => <Login setUser={this.setUser} />}
+                    />
                 </div>
             </Router>
         );
