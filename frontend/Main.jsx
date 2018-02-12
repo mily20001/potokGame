@@ -10,13 +10,26 @@ import Admin from './Admin';
 import Login from './Login';
 
 export default class Main extends Component {
+    constructor(props) {
+        super(props);
+        this.state = {
+            user: {},
+        };
+
+        this.setUser = this.setUser.bind(this);
+    }
+
+    setUser(user) {
+        this.setState({ user });
+    }
+
     render() {
         return (
             <BrowserRouter>
                 <div className="container fullpage-container">
                     <Route exact path="/" component={App} />
-                    <Route path="/admin" component={Admin} />
-                    <Route path="/login" component={Login} />
+                    <Route path="/admin" render={() => <Admin user={this.state.user} />} />
+                    <Route exact path="/login" render={() => <Login setUser={this.setUser} />} />
                 </div>
             </BrowserRouter>
         );

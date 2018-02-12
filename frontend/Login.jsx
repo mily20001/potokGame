@@ -1,9 +1,6 @@
 import React, { Component } from 'react';
-import {
-    BrowserRouter,
-    Route,
-    Link,
-} from 'react-router-dom';
+import PropTypes from 'prop-types';
+import ReactRouterPropTypes from 'react-router-prop-types';
 
 export default class Login extends Component {
     componentDidMount() {
@@ -17,3 +14,9 @@ export default class Login extends Component {
         );
     }
 }
+
+Login.propTypes = {
+    setUser: PropTypes.function.isRequired,
+    history: ReactRouterPropTypes.history.isRequired,
+};
+
