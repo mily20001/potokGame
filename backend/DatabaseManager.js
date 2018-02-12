@@ -43,7 +43,7 @@ export default class DatabaseManager {
         });
     }
 
-    addPlayer(username, password, name, surname, callback) {
+    addPlayer(username, password, name, surname, role, callback) {
         bcrypt.genSalt(10, (err, salt) => {
             if (err) {
                 console.error(err);
@@ -58,11 +58,12 @@ export default class DatabaseManager {
                     return;
                 }
 
-                const query = 'INSERT INTO Players (username, password, name, surname) VALUES ' +
+                const query = 'INSERT INTO Players (username, password, name, surname, role) VALUES ' +
                     `(${this.connection.escape(username)}, ` +
                     `${this.connection.escape(hash)}, ` +
                     `${this.connection.escape(name)}, ` +
-                    `${this.connection.escape(surname)})`;
+                    `${this.connection.escape(surname)})` +
+                    `${this.connection.escape(role)})`;
 
                 this.connection.query(query, (err3, results) => {
                     if (err3) {

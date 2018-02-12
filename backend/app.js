@@ -17,7 +17,7 @@ const databaseManager = new DatabaseManager();
 
 // databaseManager.addPlayer('admin', 'milosz', 'Miłosz', 'D.', () => {});
 // databaseManager.login('admin', 'milosz', () => {});
-databaseManager.getUserFromCookie('cc0aa36fac252b77a69a810451fa4caa339522051e91ff25e9065ea97c49de3817f3aa9cd97643760592aa611079cb74', ()=>{});
+databaseManager.getUserFromCookie('cc0aa36fac252b77a69a810451fa4caa339522051e91ff25e9065ea97c49de3817f3aa9cd97643760592aa611079cb74', () => {});
 
 const server = http.createServer((req, res) => {
     if (req.headers['x-forwarded-protocol'] === 'http') {
@@ -33,6 +33,9 @@ const server = http.createServer((req, res) => {
             } else if (filesMap[req.url].code === 301) {
                 res.end();
             }
+        } else if (req.url.search(/\./) === -1) {
+            res.writeHead(filesMap['/'].code, filesMap['/'].headers);
+            res.end(fs.readFileSync(`${CONFIG.httpBasePath}/${filesMap['/'].file}`));
         } else {
             console.log(`Requested file not found: ${req.url}`);
             res.writeHead(404, { 'Content-Type': 'text/html' });
