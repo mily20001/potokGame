@@ -6,6 +6,9 @@ import {
 } from 'react-router-dom';
 
 export default class AdminWelcomePage extends Component {
+    componentDidMount() {
+        document.title = 'Panel Administratora';
+    }
     render() {
         return (
             <div>

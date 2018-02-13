@@ -8,6 +8,7 @@ import createBrowserHistory from 'history/createBrowserHistory';
 import App from './App';
 import Admin from './Admin';
 import Login from './Login';
+import LoadingScreen from './LoadingScreen';
 
 export default class Main extends Component {
     constructor(props) {
@@ -18,9 +19,21 @@ export default class Main extends Component {
 
         this.history = createBrowserHistory();
 
-        this.history.push('/login');
+        this.history.push('/loading');
 
         this.setUser = this.setUser.bind(this);
+
+        const xhr = new XMLHttpRequest();
+        xhr.open('GET', '/get_user', true);
+        xhr.onload = () => {
+            const result = JSON.parse(xhr.responseText);
+            if (result.user !== undefined) {
+                this.setUser(result.user);
+            } else {
+                this.setUser({});
+            }
+        };
+        xhr.send();
     }
 
     setUser(user) {
@@ -47,6 +60,7 @@ export default class Main extends Component {
                         path="/login"
                         render={() => <Login setUser={this.setUser} />}
                     />
+                    <Route exact path="/loading" component={LoadingScreen} />
                 </div>
             </Router>
         );

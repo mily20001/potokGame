@@ -5,8 +5,6 @@ import crypto from 'crypto';
 import CONFIG from './config';
 import errorCodes from './errorCodes';
 
-// TODO prevent connection from timeouting
-
 export default class DatabaseManager {
     constructor() {
         this.connection = mysql.createConnection({
@@ -159,8 +157,10 @@ export default class DatabaseManager {
                     return;
                 }
 
-                console.log(results[0]);
-                callback(results);
+                const loggedUser = { ...results[0], password: undefined };
+
+                // console.log(loggedUser);
+                callback({ user: loggedUser });
             });
     }
 }

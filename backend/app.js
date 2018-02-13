@@ -18,9 +18,21 @@ const databaseManager = new DatabaseManager();
 
 // databaseManager.addPlayer('admin', 'milosz', 'Miłosz', 'D.', () => {});
 // databaseManager.login('admin', 'milosz', () => {});
-databaseManager.getUserFromCookie('cc0aa36fac252b77a69a810451fa4caa339522051e91ff25e9065ea97c49de3817f3aa9cd97643760592aa611079cb74', () => {});
+// databaseManager.getUserFromCookie('cc0aa36fac252b77a69a810451fa4caa339522051e91ff25e9065ea97c49de3817f3aa9cd97643760592aa611079cb74', () => {});
+
+function parseCookies(cookieString = '') {
+    const cookies = [];
+    cookieString.split(';').forEach((cookie) => {
+        const cookieParts = cookie.split('=');
+        cookies[cookieParts.shift().trim()] = decodeURI(cookieParts.join('='));
+    });
+
+    return cookies;
+}
 
 const server = http.createServer((req, res) => {
+    const cookies = parseCookies(req.headers.cookie);
+
     if (req.headers['x-forwarded-protocol'] === 'http') {
         console.log('upgrading to https');
         res.writeHead(301, { Location: `https://${req.headers.host}${req.url}` });
@@ -34,6 +46,14 @@ const server = http.createServer((req, res) => {
             } else if (filesMap[req.url].code === 301) {
                 res.end();
             }
+        } else if (req.url === '/get_user') {
+            databaseManager.getUserFromCookie(cookies.token, (result) => {
+                if (result.err !== undefined || result.user === undefined) {
+                    res.end(JSON.stringify({ user: {} }));
+                } else {
+                    res.end(JSON.stringify({ user: result.user }));
+                }
+            });
         } else if (req.url.search(/\./) === -1) {
             res.writeHead(filesMap['/'].code, filesMap['/'].headers);
             res.end(fs.readFileSync(`${CONFIG.httpBasePath}/${filesMap['/'].file}`));

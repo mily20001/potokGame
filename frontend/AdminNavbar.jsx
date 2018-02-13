@@ -12,7 +12,7 @@ export default function AdminNavbar(props) {
                 className="btn btn-outline-light"
                 onClick={props.toggleSidebar}
             >
-                <i className="fas fa-bars" />
+                <i className="fa fa-bars" />
             </button>
 
             <Link to="/admin" className="navbar-brand text-white">{(props.width < 600) ? 'DotU' : 'Dragons of the Universe'}</Link>
