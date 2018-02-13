@@ -14,7 +14,7 @@ export default class AdminSidebar extends Component {
             <div className="full-height admin-sidebar" style={style}>
                 <ul className="list-group">
                     <Link to="/admin/lol" className="list-group-item bg-secondary text-white">Manage Players</Link>
-                    <Link to="/login" className="list-group-item bg-secondary text-white">Manage Dragons</Link>
+                    <Link to="/admin/map/upload" className="list-group-item bg-secondary text-white">Manage Dragons</Link>
                     <Link to="/login" className="list-group-item bg-secondary text-white">Manage Game</Link>
                 </ul>
             </div>

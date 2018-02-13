@@ -1,0 +1,22 @@
+.file-upload-container {
+  padding-top: 15px;
+}
+
+.file-preview-row {
+  transition: height .6s;
+  height: 0;
+  overflow: hidden;
+}
+
+.file-preview-container {
+  text-align: center;
+}
+
+#image-preview {
+  display: inline-block;
+}
+
+#image-preview img {
+  max-height: 350px;
+  max-width: 80%;
+}

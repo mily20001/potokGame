@@ -8,6 +8,7 @@ import Login from './Login';
 import AdminWelcomePage from './AdminWelcomePage';
 import AdminSidebar from './AdminSidebar';
 import AdminNavbar from './AdminNavbar';
+import FileUploader from "./FileUploader";
 
 export default class Admin extends Component {
     constructor(props) {
@@ -74,7 +75,10 @@ export default class Admin extends Component {
                 </div>
                 <div style={mainStyle} className="admin-main-container">
                     <Route exact path="/admin" component={AdminWelcomePage} />
-                    <Route path="/admin/lol" component={Login} />
+                    <Route
+                        path="/admin/map/upload"
+                        render={() => <FileUploader messageText={'Wyślij plik mapy'} imageType={'map'} />}
+                    />
                 </div>
             </div>
         );

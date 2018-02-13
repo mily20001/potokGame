@@ -1,6 +1,7 @@
 import http from 'http';
 import fs from 'fs';
 import qs from 'qs';
+import multiparty from 'multiparty';
 
 import CONFIG from './config';
 import DatabaseManager from './DatabaseManager';
@@ -18,7 +19,8 @@ const databaseManager = new DatabaseManager();
 
 // databaseManager.addPlayer('admin', 'milosz', 'Miłosz', 'D.', () => {});
 // databaseManager.login('admin', 'milosz', () => {});
-// databaseManager.getUserFromCookie('cc0aa36fac252b77a69a810451fa4caa339522051e91ff25e9065ea97c49de3817f3aa9cd97643760592aa611079cb74', () => {});
+// databaseManager.getUserFromCookie('cc0aa36fac252b77a69a810451fa4caa339522051e91
+// ff25e9065ea97c49de3817f3aa9cd97643760592aa611079cb74', () => {});
 
 function parseCookies(cookieString = '') {
     const cookies = [];
@@ -65,43 +67,98 @@ const server = http.createServer((req, res) => {
     } else if (req.method.toUpperCase() === 'POST') {
         let body = '';
 
-        req.on('data', (data) => {
-            body += data;
-            if (body.length > 1e6) { req.connection.destroy(); }
-        });
+        if (req.url === '/upload') {
+            const form = new multiparty.Form();
 
-        req.on('end', () => {
-            const post = qs.parse(body);
+            form.on('error', (err) => {
+                console.log(`Error parsing form: ${err.stack}`);
+            });
+
+            form.on('part', (part) => {
+                part.resume();
+
+                part.on('error', (err) => {
+                    console.log(err);
+                });
+            });
+
+            form.on('close', () => {
+                // res.end();
+            });
+
+            form.parse(req, (err, fields, files) => {
+                // Object.keys(fields).forEach((name) => {
+                //     console.log(`got field named ${name}`);
+                // });
+                //
+                // Object.keys(files).forEach((name) => {
+                //     console.log(`got file named ${name}`);
+                // });
+
+                if (fields.filename !== undefined
+                    && fields.imageType !== undefined
+                    && files.image !== undefined
+                ) {
+                    const image = fs.readFileSync(files.image[0].path);
+                    databaseManager.uploadImage(image, fields.imageType, fields.filename,
+                        (result) => {
+                            if (result.err === undefined && result.id !== undefined) {
+                                res.writeHead(200);
+                                res.end(JSON.stringify({ ok: 'ok' }));
+                            } else {
+                                res.writeHead(500);
+                                res.end(JSON.stringify({ err: 'err' }));
+                            }
+                        });
+                } else {
+                    res.writeHead(400);
+                    res.end(JSON.stringify({ err: 'err' }));
+                }
+
+                console.log('Upload completed!');
+                console.log(`Received ${Object.keys(files).length} files`);
+                console.log(files.image);
+                console.log(fields.filename);
+            });
+        } else {
+            req.on('data', (data) => {
+                body += data;
+                if (body.length > 1e6) { req.connection.destroy(); }
+            });
+
+            req.on('end', () => {
+                const post = qs.parse(body);
             // console.log(post);
 
-            if (req.url === '/login') {
-                if (post.username !== undefined && post.password !== undefined) {
-                    databaseManager.login(post.username, post.password, (result) => {
-                        if (result.err === undefined
+                if (req.url === '/login') {
+                    if (post.username !== undefined && post.password !== undefined) {
+                        databaseManager.login(post.username, post.password, (result) => {
+                            if (result.err === undefined
                             && result.token !== undefined
                             && result.user !== undefined
                         ) {
-                            res.writeHead(200, {
-                                'Set-Cookie': `token=${result.token};` +
-                                    `Expires=${(new Date('2020')).toUTCString()};` +
-                                    'Http-only',
-                            });
-                            res.end(JSON.stringify({ user: result.user }));
-                        } else if (result.err !== undefined) {
-                            res.end(JSON.stringify({ err: result.errCode }));
-                        } else {
-                            res.end(JSON.stringify({ err: 'undefined login result error' }));
-                        }
-                    });
+                                res.writeHead(200, {
+                                    'Set-Cookie': `token=${result.token};` +
+                                `Expires=${(new Date('2020')).toUTCString()};` +
+                                'Http-only',
+                                });
+                                res.end(JSON.stringify({ user: result.user }));
+                            } else if (result.err !== undefined) {
+                                res.end(JSON.stringify({ err: result.errCode }));
+                            } else {
+                                res.end(JSON.stringify({ err: 'undefined login result error' }));
+                            }
+                        });
+                    } else {
+                        res.writeHead(400);
+                        res.end();
+                    }
                 } else {
                     res.writeHead(400);
                     res.end();
                 }
-            } else {
-                res.writeHead(400);
-                res.end();
-            }
-        });
+            });
+        }
     }
 });
 server.listen(3000);

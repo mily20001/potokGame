@@ -163,4 +163,18 @@ export default class DatabaseManager {
                 callback({ user: loggedUser });
             });
     }
+
+    uploadImage(image, type, filename, callback) {
+        this.connection.query(`INSERT INTO Images (data, type, filename) VALUES (${mysql.escape(image)}, ${mysql.escape(type)}, ${mysql.escape(filename)})`, (err, results) => {
+            if (err) {
+                console.error(err);
+                callback({ err });
+                return;
+            }
+
+            const newImageId = results.insertId;
+            console.log(`Added new image with id: ${newImageId}`);
+            callback({ id: newImageId });
+        });
+    }
 }
