@@ -8,7 +8,8 @@ import Login from './Login';
 import AdminWelcomePage from './AdminWelcomePage';
 import AdminSidebar from './AdminSidebar';
 import AdminNavbar from './AdminNavbar';
-import FileUploader from "./FileUploader";
+import FileUploader from './FileUploader';
+import AdminMapManager from './AdminMapManager'
 
 export default class Admin extends Component {
     constructor(props) {
@@ -78,6 +79,11 @@ export default class Admin extends Component {
                     <Route
                         path="/admin/map/upload"
                         render={() => <FileUploader messageText={'Wyślij plik mapy'} imageType={'map'} />}
+                    />
+                    <Route
+                        exact
+                        path="/admin/map"
+                        component={AdminMapManager}
                     />
                 </div>
             </div>

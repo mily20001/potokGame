@@ -173,8 +173,17 @@ export default class DatabaseManager {
             }
 
             const newImageId = results.insertId;
-            console.log(`Added new image with id: ${newImageId}`);
-            callback({ id: newImageId });
+
+            this.connection.query(`DELETE FROM Images WHERE type='map' AND id <> ${newImageId}`, (err2, results2) => {
+                if (err2) {
+                    console.error(err2);
+                    callback({ err: err2 });
+                    return;
+                }
+
+                console.log(`Added new image with id: ${newImageId}`);
+                callback({ id: newImageId });
+            });
         });
     }
 }

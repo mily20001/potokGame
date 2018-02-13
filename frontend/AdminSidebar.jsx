@@ -15,7 +15,7 @@ export default class AdminSidebar extends Component {
                 <ul className="list-group">
                     <Link to="/admin/lol" className="list-group-item bg-secondary text-white">Manage Players</Link>
                     <Link to="/admin/map/upload" className="list-group-item bg-secondary text-white">Manage Dragons</Link>
-                    <Link to="/login" className="list-group-item bg-secondary text-white">Manage Game</Link>
+                    <Link to="/admin/map" className="list-group-item bg-secondary text-white">Manage Game</Link>
                 </ul>
             </div>
         );
