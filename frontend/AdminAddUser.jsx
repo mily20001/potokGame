@@ -20,51 +20,12 @@ export default class AdminAddUser extends Component {
             currentField: -1,
             nextField: -1,
             status: -1,
-            dragons: [],
-            teams: [],
         };
 
         this.state = { ...this.state, ...this.props.currentUser };
 
         this.handleField = this.handleField.bind(this);
         this.handleSubmit = this.handleSubmit.bind(this);
-    }
-
-    componentDidMount() {
-        this.getDragons();
-        this.getTeams();
-    }
-
-    getDragons() {
-        const xhr = new XMLHttpRequest();
-        xhr.open('GET', '/get_dragons', true);
-        xhr.onload = () => {
-            const result = JSON.parse(xhr.responseText);
-            if (result.dragons !== undefined) {
-                const dragons =
-                    Object.keys(result.dragons).map(key => [key, result.dragons[key].name]);
-                this.setState({ dragons });
-            } else {
-                console.log('error while getting dragons');
-            }
-        };
-        xhr.send();
-    }
-
-    getTeams() {
-        const xhr = new XMLHttpRequest();
-        xhr.open('GET', '/get_teams', true);
-        xhr.onload = () => {
-            const result = JSON.parse(xhr.responseText);
-            if (result.teams !== undefined) {
-                const teams =
-                    Object.keys(result.teams).map(key => [key, result.teams[key].name]);
-                this.setState({ teams });
-            } else {
-                console.log('error while getting teams');
-            }
-        };
-        xhr.send();
     }
 
     handleField(fieldName, event) {
@@ -122,17 +83,19 @@ export default class AdminAddUser extends Component {
                 label: 'Smok użytkownika',
                 type: 'dropdown',
                 placeholder: 'Wybierz smoka',
-                options: this.state.dragons,
+                options: Object.keys(this.props.databaseObjects.dragons).map(key =>
+                    [key, this.props.databaseObjects.dragons[key].name]),
             },
             { id: 'team',
                 label: 'Drużyna użytkownika',
                 type: 'dropdown',
                 placeholder: 'Wybierz drużynę',
-                options: this.state.teams,
+                options: Object.keys(this.props.databaseObjects.teams).map(key =>
+                    [key, this.props.databaseObjects.teams[key].name]),
             },
         ];
 
-        this.fieldsArr = fields.map((field) => field.id);
+        this.fieldsArr = fields.map(field => field.id);
 
         this.formFields = fields.map((field) => {
             if (field.type === 'dropdown') {
@@ -228,6 +191,7 @@ export default class AdminAddUser extends Component {
 
 AdminAddUser.propTypes = {
     currentUser: PropTypes.object,
+    databaseObjects: PropTypes.object.isRequired,
 };
 
 AdminAddUser.defaultProps = {

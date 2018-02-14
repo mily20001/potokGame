@@ -28,7 +28,7 @@ export default class DatabaseManager {
     }
 
     getDragons(callback) {
-        this.connection.query('SELECT id, name from Dragons', (err, results) => {
+        this.connection.query('SELECT * from Dragons', (err, results) => {
             if (err) {
                 console.error(err);
                 callback({ err });
@@ -36,15 +36,42 @@ export default class DatabaseManager {
             }
 
             const dragons = results.reduce((allDragons, dragon) =>
-                ({ ...allDragons, [dragon.id]: { name: dragon.name } }), {});
+                ({ ...allDragons, [dragon.id]: { ...dragon } }), {});
 
-            console.log(dragons);
-            callback({ dragons });
+            let queriesToBeDone = results.length;
+
+            Object.keys(dragons).forEach((key) => {
+                this.connection.query(`SELECT * from Dragons_leveling WHERE dragon_id=${key}`, (err2, results2) => {
+                    if (err2) {
+                        console.error(err2);
+                        callback({ err: err2 });
+                        return;
+                    }
+
+                    dragons[key].levels = {};
+
+                    results2.forEach((level) => {
+                        dragons[key].levels[level.level] = {
+                            xp: level.xp,
+                            strength: level.strength,
+                            defence: level.defence,
+                            range: level.range,
+                            hp: level.hp,
+                        };
+                    });
+
+                    queriesToBeDone--;
+
+                    if (queriesToBeDone === 0) {
+                        callback({ dragons });
+                    }
+                });
+            });
         });
     }
 
     getTeams(callback) {
-        this.connection.query('SELECT id, name, capitan from Teams', (err, results) => {
+        this.connection.query('SELECT * from Teams', (err, results) => {
             if (err) {
                 console.error(err);
                 callback({ err });
@@ -52,10 +79,133 @@ export default class DatabaseManager {
             }
 
             const teams = results.reduce((allTeams, team) =>
-                ({ ...allTeams, [team.id]: { name: team.name, capitan: team.capitan } }), {});
+                ({ ...allTeams, [team.id]: { ...team } }), {});
 
             // console.log(teams);
             callback({ teams });
+        });
+    }
+
+    getPlayers(requestRole, callback) {
+        const query = `SELECT * from Players ${requestRole === 'admin' ? '' : 'WHERE role = "player"'}`;
+        this.connection.query(query, (err, results) => {
+            if (err) {
+                console.error(err);
+                callback({ err });
+                return;
+            }
+
+            // TODO czy pokazywać prawdziwe hp?
+            if (requestRole === 'admin') {
+                const players = results.reduce((allPlayers, player) =>
+                    ({ ...allPlayers, [player.id]: { ...player, password: undefined } }), {});
+
+                let queriesToBeDone = results.length;
+
+                Object.keys(players).forEach((key) => {
+                    this.connection.query(`SELECT * from Points WHERE player_id=${key}`, (err2, results2) => {
+                        if (err2) {
+                            console.error(err2);
+                            callback({ err: err2 });
+                            return;
+                        }
+
+                        players[key].points = {};
+
+                        results2.forEach((pointsRow) => {
+                            players[key].points[pointsRow.date] = {
+                                points_punktualnosc: pointsRow.points_punktualnosc,
+                                points_przygotowanie: pointsRow.points_przygotowanie,
+                                points_skupienie: pointsRow.points_skupienie,
+                                points_efekt: pointsRow.points_efekt,
+                            };
+                        });
+
+                        queriesToBeDone--;
+
+                        if (queriesToBeDone === 0) {
+                            callback({ players });
+                        }
+                    });
+                });
+            } else if (requestRole === 'player') {
+                const players = results.reduce((allPlayers, player) =>
+                    ({ ...allPlayers,
+                        [player.id]: { ...player,
+                            password: undefined,
+                            current_field: undefined,
+                            next_field: undefined,
+                            role: undefined,
+                        } }), {});
+
+                callback({ players });
+            } else {
+                callback({ err: 'err' });
+            }
+        });
+    }
+
+    getFields(callback) {
+        this.connection.query('SELECT * from Fields', (err, results) => {
+            if (err) {
+                console.error(err);
+                callback({ err });
+                return;
+            }
+
+            const fields = results.reduce((allFields, field) =>
+                ({ ...allFields, [field.id]: { ...field } }), {});
+
+            callback({ fields });
+        });
+    }
+
+    getRegions(callback) {
+        this.connection.query('SELECT * from Regions', (err, results) => {
+            if (err) {
+                console.error(err);
+                callback({ err });
+                return;
+            }
+
+            const regions = results.reduce((allRegions, region) =>
+                ({ ...allRegions, [region.id]: { ...region } }), {});
+
+            callback({ regions });
+        });
+    }
+
+    getImageList(callback) {
+        this.connection.query('SELECT id, type, filename from Images', (err, results) => {
+            if (err) {
+                console.error(err);
+                callback({ err });
+                return;
+            }
+
+            const images = results.reduce((allImages, image) =>
+                ({ ...allImages, [image.id]: { ...image } }), {});
+
+            callback({ images });
+        });
+    }
+
+    getImage(imageId, callback) {
+        this.connection.query(`SELECT * from Images WHERE id=${mysql.escape(imageId)}`, (err, results) => {
+            if (err) {
+                console.error(err);
+                callback({ err });
+                return;
+            }
+
+            if (results.length !== 1) {
+                console.error('Requested image doesn\'t exists');
+                callback({ err: 'err' });
+                return;
+            }
+
+            // console.log(teams);
+            callback({ data: results[0].data });
         });
     }
 
@@ -190,7 +340,7 @@ export default class DatabaseManager {
 
             const newImageId = results.insertId;
 
-            this.connection.query(`DELETE FROM Images WHERE type='map' AND id <> ${newImageId}`, (err2, results2) => {
+            this.connection.query(`DELETE FROM Images WHERE type='map' AND id <> ${newImageId}`, (err2) => {
                 if (err2) {
                     console.error(err2);
                     callback({ err: err2 });

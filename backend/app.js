@@ -88,6 +88,90 @@ const server = http.createServer((req, res) => {
                     });
                 }
             });
+        } else if (req.url === '/get_users') {
+            databaseManager.getUserFromCookie(cookies.token, (result) => {
+                if (result.err !== undefined || result.user === undefined) {
+                    res.writeHead(403);
+                    res.end();
+                } else {
+                    databaseManager.getPlayers(result.user.role, (result2) => {
+                        if (result2.players !== undefined) {
+                            res.end(JSON.stringify({ users: result2.players }));
+                        } else {
+                            res.writeHead(500);
+                            res.end();
+                        }
+                    });
+                }
+            });
+        } else if (req.url === '/get_fields') {
+            databaseManager.getUserFromCookie(cookies.token, (result) => {
+                if (result.err !== undefined || result.user === undefined) {
+                    res.writeHead(403);
+                    res.end();
+                } else {
+                    databaseManager.getFields((result2) => {
+                        if (result2.fields !== undefined) {
+                            res.end(JSON.stringify({ fields: result2.fields }));
+                        } else {
+                            res.writeHead(500);
+                            res.end();
+                        }
+                    });
+                }
+            });
+        } else if (req.url === '/get_regions') {
+            databaseManager.getUserFromCookie(cookies.token, (result) => {
+                if (result.err !== undefined || result.user === undefined) {
+                    res.writeHead(403);
+                    res.end();
+                } else {
+                    databaseManager.getRegions((result2) => {
+                        if (result2.regions !== undefined) {
+                            res.end(JSON.stringify({ regions: result2.regions }));
+                        } else {
+                            res.writeHead(500);
+                            res.end();
+                        }
+                    });
+                }
+            });
+        } else if (req.url === '/get_image_list') {
+            databaseManager.getUserFromCookie(cookies.token, (result) => {
+                if (result.err !== undefined || result.user === undefined) {
+                    res.writeHead(403);
+                    res.end();
+                } else {
+                    databaseManager.getImageList((result2) => {
+                        if (result2.images !== undefined) {
+                            res.end(JSON.stringify({ images: result2.images }));
+                        } else {
+                            res.writeHead(500);
+                            res.end();
+                        }
+                    });
+                }
+            });
+        } else if (req.url.substr(0, '/get_image'.length) === '/get_image') {
+            databaseManager.getUserFromCookie(cookies.token, (result) => {
+                if (result.err !== undefined || result.user === undefined) {
+                    res.writeHead(403);
+                    res.end();
+                } else if (req.url.split('?')[1] === undefined || req.url.split('?')[1].split('=')[1] === undefined) {
+                    res.writeHead(400);
+                    res.end();
+                } else {
+                    const imageId = req.url.split('?')[1].split('=')[1];
+                    databaseManager.getImage(imageId, (result2) => {
+                        if (result2.data !== undefined) {
+                            res.end(JSON.stringify({ id: imageId, data: result2.data }));
+                        } else {
+                            res.writeHead(500);
+                            res.end();
+                        }
+                    });
+                }
+            });
         } else if (req.url.search(/\./) === -1) {
             res.writeHead(filesMap['/'].code, filesMap['/'].headers);
             res.end(fs.readFileSync(`${CONFIG.httpBasePath}/${filesMap['/'].file}`));
@@ -128,30 +212,35 @@ const server = http.createServer((req, res) => {
                 // });
 
                 if (req.url === '/upload') {
-                    if (fields.filename !== undefined
-                        && fields.imageType !== undefined
-                        && files.image !== undefined
-                    ) {
-                        const image = fs.readFileSync(files.image[0].path);
-                        databaseManager.uploadImage(image, fields.imageType, fields.filename,
-                            (result) => {
-                                if (result.err === undefined && result.id !== undefined) {
-                                    res.writeHead(200);
-                                    res.end(JSON.stringify({ ok: 'ok' }));
-                                } else {
-                                    res.writeHead(500);
-                                    res.end(JSON.stringify({ err: 'err' }));
-                                }
-                            });
-                    } else {
-                        res.writeHead(400);
-                        res.end(JSON.stringify({ err: 'err' }));
-                    }
+                    databaseManager.getUserFromCookie(cookies.token, (result) => {
+                        if (result.err !== undefined || result.user === undefined || result.user.role !== 'admin') {
+                            res.writeHead(403);
+                            res.end();
+                        } else if (fields.filename !== undefined
+                            && fields.imageType !== undefined
+                            && files.image !== undefined
+                        ) {
+                            const image = fs.readFileSync(files.image[0].path);
+                            databaseManager.uploadImage(image, fields.imageType, fields.filename,
+                                (result2) => {
+                                    if (result2.err === undefined && result2.id !== undefined) {
+                                        res.writeHead(200);
+                                        res.end(JSON.stringify({ ok: 'ok' }));
+                                    } else {
+                                        res.writeHead(500);
+                                        res.end(JSON.stringify({ err: 'err' }));
+                                    }
+                                });
+                        } else {
+                            res.writeHead(400);
+                            res.end(JSON.stringify({ err: 'err' }));
+                        }
 
-                    console.log('Upload completed!');
-                    console.log(`Received ${Object.keys(files).length} files`);
-                    console.log(files.image);
-                    console.log(fields.filename);
+                        console.log('Upload completed!');
+                        console.log(`Received ${Object.keys(files).length} files`);
+                        console.log(files.image);
+                        console.log(fields.filename);
+                    });
                 } else if (req.url === '/add_user') {
                     databaseManager.getUserFromCookie(cookies.token, (result) => {
                         if (result.err !== undefined || result.user === undefined || result.user.role !== 'admin') {

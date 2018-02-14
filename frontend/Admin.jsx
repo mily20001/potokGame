@@ -89,7 +89,7 @@ export default class Admin extends Component {
                     <Route
                         exact
                         path="/admin/users/add"
-                        component={AdminAddUser}
+                        render={() => <AdminAddUser databaseObjects={this.props.databaseObjects} />}
                     />
                 </div>
             </div>
@@ -99,4 +99,5 @@ export default class Admin extends Component {
 
 Admin.propTypes = {
     user: PropTypes.object.isRequired,
+    databaseObjects: PropTypes.object.isRequired,
 };
