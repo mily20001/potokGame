@@ -56,6 +56,38 @@ const server = http.createServer((req, res) => {
                     res.end(JSON.stringify({ user: result.user }));
                 }
             });
+        } else if (req.url === '/get_dragons') {
+            databaseManager.getUserFromCookie(cookies.token, (result) => {
+                if (result.err !== undefined || result.user === undefined) {
+                    res.writeHead(403);
+                    res.end();
+                } else {
+                    databaseManager.getDragons((result2) => {
+                        if (result2.dragons !== undefined) {
+                            res.end(JSON.stringify({ dragons: result2.dragons }));
+                        } else {
+                            res.writeHead(500);
+                            res.end();
+                        }
+                    });
+                }
+            });
+        } else if (req.url === '/get_teams') {
+            databaseManager.getUserFromCookie(cookies.token, (result) => {
+                if (result.err !== undefined || result.user === undefined) {
+                    res.writeHead(403);
+                    res.end();
+                } else {
+                    databaseManager.getTeams((result2) => {
+                        if (result2.teams !== undefined) {
+                            res.end(JSON.stringify({ teams: result2.teams }));
+                        } else {
+                            res.writeHead(500);
+                            res.end();
+                        }
+                    });
+                }
+            });
         } else if (req.url.search(/\./) === -1) {
             res.writeHead(filesMap['/'].code, filesMap['/'].headers);
             res.end(fs.readFileSync(`${CONFIG.httpBasePath}/${filesMap['/'].file}`));
@@ -67,7 +99,7 @@ const server = http.createServer((req, res) => {
     } else if (req.method.toUpperCase() === 'POST') {
         let body = '';
 
-        if (req.url === '/upload') {
+        if (req.url === '/upload' || req.url === '/add_user') {
             const form = new multiparty.Form();
 
             form.on('error', (err) => {
@@ -95,30 +127,57 @@ const server = http.createServer((req, res) => {
                 //     console.log(`got file named ${name}`);
                 // });
 
-                if (fields.filename !== undefined
-                    && fields.imageType !== undefined
-                    && files.image !== undefined
-                ) {
-                    const image = fs.readFileSync(files.image[0].path);
-                    databaseManager.uploadImage(image, fields.imageType, fields.filename,
-                        (result) => {
-                            if (result.err === undefined && result.id !== undefined) {
-                                res.writeHead(200);
-                                res.end(JSON.stringify({ ok: 'ok' }));
-                            } else {
-                                res.writeHead(500);
-                                res.end(JSON.stringify({ err: 'err' }));
-                            }
-                        });
-                } else {
-                    res.writeHead(400);
-                    res.end(JSON.stringify({ err: 'err' }));
-                }
+                if (req.url === '/upload') {
+                    if (fields.filename !== undefined
+                        && fields.imageType !== undefined
+                        && files.image !== undefined
+                    ) {
+                        const image = fs.readFileSync(files.image[0].path);
+                        databaseManager.uploadImage(image, fields.imageType, fields.filename,
+                            (result) => {
+                                if (result.err === undefined && result.id !== undefined) {
+                                    res.writeHead(200);
+                                    res.end(JSON.stringify({ ok: 'ok' }));
+                                } else {
+                                    res.writeHead(500);
+                                    res.end(JSON.stringify({ err: 'err' }));
+                                }
+                            });
+                    } else {
+                        res.writeHead(400);
+                        res.end(JSON.stringify({ err: 'err' }));
+                    }
 
-                console.log('Upload completed!');
-                console.log(`Received ${Object.keys(files).length} files`);
-                console.log(files.image);
-                console.log(fields.filename);
+                    console.log('Upload completed!');
+                    console.log(`Received ${Object.keys(files).length} files`);
+                    console.log(files.image);
+                    console.log(fields.filename);
+                } else if (req.url === '/add_user') {
+                    databaseManager.getUserFromCookie(cookies.token, (result) => {
+                        if (result.err !== undefined || result.user === undefined || result.user.role !== 'admin') {
+                            res.writeHead(403);
+                            res.end();
+                        } else if (fields.username[0] !== undefined
+                                && fields.name[0] !== undefined
+                                && fields.surname[0] !== undefined
+                                && fields.password[0] !== undefined
+                                && fields.role[0] !== undefined
+                            ) {
+                            databaseManager.addPlayer(fields.username[0], fields.password[0],
+                                fields.name[0], fields.surname[0], fields.role[0], (result2) => {
+                                    if (result2.newUserId !== undefined) {
+                                        res.end(JSON.stringify({ ok: 'ok' }));
+                                    } else {
+                                        res.writeHead(500);
+                                        res.end(JSON.stringify({ err: 'err' }));
+                                    }
+                                });
+                        } else {
+                            res.writeHead(400);
+                            res.end(JSON.stringify({ err: 'err' }));
+                        }
+                    });
+                }
             });
         } else {
             req.on('data', (data) => {

@@ -9,7 +9,8 @@ import AdminWelcomePage from './AdminWelcomePage';
 import AdminSidebar from './AdminSidebar';
 import AdminNavbar from './AdminNavbar';
 import FileUploader from './FileUploader';
-import AdminMapManager from './AdminMapManager'
+import AdminMapManager from './AdminMapManager';
+import AdminAddUser from './AdminAddUser';
 
 export default class Admin extends Component {
     constructor(props) {
@@ -84,6 +85,11 @@ export default class Admin extends Component {
                         exact
                         path="/admin/map"
                         component={AdminMapManager}
+                    />
+                    <Route
+                        exact
+                        path="/admin/users/add"
+                        component={AdminAddUser}
                     />
                 </div>
             </div>

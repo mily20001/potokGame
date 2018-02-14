@@ -36,10 +36,26 @@ export default class DatabaseManager {
             }
 
             const dragons = results.reduce((allDragons, dragon) =>
-                ({ ...allDragons, [dragon.id]: dragon.name }), {});
+                ({ ...allDragons, [dragon.id]: { name: dragon.name } }), {});
 
             console.log(dragons);
             callback({ dragons });
+        });
+    }
+
+    getTeams(callback) {
+        this.connection.query('SELECT id, name, capitan from Teams', (err, results) => {
+            if (err) {
+                console.error(err);
+                callback({ err });
+                return;
+            }
+
+            const teams = results.reduce((allTeams, team) =>
+                ({ ...allTeams, [team.id]: { name: team.name, capitan: team.capitan } }), {});
+
+            // console.log(teams);
+            callback({ teams });
         });
     }
 
@@ -62,7 +78,7 @@ export default class DatabaseManager {
                     `(${this.connection.escape(username)}, ` +
                     `${this.connection.escape(hash)}, ` +
                     `${this.connection.escape(name)}, ` +
-                    `${this.connection.escape(surname)})` +
+                    `${this.connection.escape(surname)}, ` +
                     `${this.connection.escape(role)})`;
 
                 this.connection.query(query, (err3, results) => {
@@ -74,7 +90,7 @@ export default class DatabaseManager {
 
                     const newUserId = results.insertId;
                     console.log(`Created new user with id: ${newUserId}`);
-                    callback(newUserId);
+                    callback({ newUserId });
                 });
             });
         });
