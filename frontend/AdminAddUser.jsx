@@ -7,25 +7,41 @@ export default class AdminAddUser extends Component {
     constructor(props) {
         super(props);
 
-        this.state = {
+        this.cleanState = {
             username: '',
             name: '',
             surname: '',
             password: '',
             password2: '',
-            dragon: '',
-            team: '',
+            dragon_id: '',
+            team_id: '',
             hp: -1,
             role: 'player',
             currentField: -1,
             nextField: -1,
+        };
+
+        this.state = {
+            ...this.cleanState,
+            ...this.props.currentUser,
+            editingUser: Object.keys(this.props.currentUser).length !== 0,
             status: -1,
         };
 
-        this.state = { ...this.state, ...this.props.currentUser };
-
         this.handleField = this.handleField.bind(this);
         this.handleSubmit = this.handleSubmit.bind(this);
+        this.clearState = this.clearState.bind(this);
+    }
+
+    componentWillReceiveProps(nextProps) {
+        this.setState({ ...this.cleanState,
+            id: undefined,
+            ...nextProps.currentUser,
+            editingUser: Object.keys(nextProps.currentUser).length !== 0 });
+    }
+
+    clearState() {
+        this.setState({ ...this.cleanState, id: undefined });
     }
 
     handleField(fieldName, event) {
@@ -44,10 +60,17 @@ export default class AdminAddUser extends Component {
         const data = new FormData();
 
         this.fieldsArr.forEach((key) => {
-            if (this.state[key] !== '' && this.state[key] !== -1) {
+            console.log(key, this.state[key], this.cleanState[key], this.props.currentUser[key]);
+            if ((this.state[key] !== this.cleanState[key] || key === 'role') && this.props.currentUser[key] !== this.state[key]) {
                 data.append(key, this.state[key]);
             }
         });
+
+        console.log('editing:', this.state.editingUser);
+
+        if (this.state.editingUser) {
+            data.append('id', this.state.id);
+        }
 
         // TODO handle modifying user
         const xhr = new XMLHttpRequest();
@@ -57,6 +80,8 @@ export default class AdminAddUser extends Component {
             const uploadResponse = JSON.parse(xhr.responseText);
             if (uploadResponse.ok !== undefined) {
                 this.setState({ status: 0 });
+                this.props.databaseObjects.refreshDatabase('users');
+                this.props.finishEdit();
             } else {
                 this.setState({ status: 3 });
             }
@@ -79,14 +104,14 @@ export default class AdminAddUser extends Component {
                 type: 'dropdown',
                 options: [['player', 'Gracz'], ['admin', 'Administrator']],
             },
-            { id: 'dragon',
+            { id: 'dragon_id',
                 label: 'Smok użytkownika',
                 type: 'dropdown',
                 placeholder: 'Wybierz smoka',
                 options: Object.keys(this.props.databaseObjects.dragons).map(key =>
                     [key, this.props.databaseObjects.dragons[key].name]),
             },
-            { id: 'team',
+            { id: 'team_id',
                 label: 'Drużyna użytkownika',
                 type: 'dropdown',
                 placeholder: 'Wybierz drużynę',
@@ -113,10 +138,13 @@ export default class AdminAddUser extends Component {
 
                 return (
                     <div className="form-group row">
-                        <label className="control-label col-sm-2" htmlFor={field.id}>
+                        <label
+                            className="control-label col-sm-4 col-lg-12 col-xl-4"
+                            htmlFor={field.id}
+                        >
                             {field.label}
                         </label>
-                        <div className="col-sm-10">
+                        <div className="col-sm-8 col-lg-12 col-xl-8">
                             <select
                                 className="form-control bg-dark text-white"
                                 id={field.id}
@@ -131,10 +159,10 @@ export default class AdminAddUser extends Component {
             }
             return (
                 <div className="form-group row">
-                    <label className="control-label col-sm-2" htmlFor={field.id}>
+                    <label className="control-label col-sm-4 col-lg-12 col-xl-4" htmlFor={field.id}>
                         {field.label}
                     </label>
-                    <div className="col-sm-10">
+                    <div className="col-sm-8 col-lg-12 col-xl-8">
                         <input
                             type={field.type}
                             className="form-control bg-dark text-white"
@@ -143,7 +171,8 @@ export default class AdminAddUser extends Component {
                             onChange={e => this.handleField(field.id, e)}
                             value={this.state[field.id]}
                             placeholder={field.placeholder}
-                            required={obligatoryFields.indexOf(field.id) !== -1}
+                            required={!this.state.editingUser
+                                && obligatoryFields.indexOf(field.id) !== -1}
                         />
                     </div>
                 </div>
@@ -154,7 +183,7 @@ export default class AdminAddUser extends Component {
     render() {
         this.prepareForm();
         return (
-            <div className="container bg-dark text-light file-upload-container">
+            <div className="container bg-dark text-light">
                 <h2 className="text-center">
                     {Object.keys(this.props.currentUser).length === 0 ? 'Dodaj nowego użytkownika' : 'Modyfikuj istniejącego użytkownika'}
                 </h2><br />
@@ -172,8 +201,18 @@ export default class AdminAddUser extends Component {
                 }
                 <form className="form-horizontal" onSubmit={this.handleSubmit}>
                     {this.formFields}
-                    <div className="form-group">
-                        <div className="col-sm-offset-2 col-sm-10">
+                    <div className="row">
+                        <div className="col-sm-2" />
+                        <div className="col-sm-2">
+                            <button
+                                className="btn btn-outline-light btn-lg"
+                                onClick={(e) => { e.preventDefault(); this.props.finishEdit(); }}
+                            >
+                                Anuluj
+                            </button>
+                        </div>
+                        <div className="col-sm-4" />
+                        <div className="col-sm-2">
                             <button
                                 type="submit"
                                 className="btn btn-outline-light btn-lg"
@@ -192,6 +231,7 @@ export default class AdminAddUser extends Component {
 AdminAddUser.propTypes = {
     currentUser: PropTypes.object,
     databaseObjects: PropTypes.object.isRequired,
+    finishEdit: PropTypes.func.isRequired,
 };
 
 AdminAddUser.defaultProps = {

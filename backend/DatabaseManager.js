@@ -209,38 +209,106 @@ export default class DatabaseManager {
         });
     }
 
-    addPlayer(username, password, name, surname, role, callback) {
-        bcrypt.genSalt(10, (err, salt) => {
+    addPoints({ userId, date, points_punktualnosc, points_przygotowanie,
+                  points_skupienie, points_efekt }, callback) {
+        const query = 'INSERT INTO Points (player_id, date, points_punktualnosc, points_przygotowanie, points_skupienie, points_efekt) VALUES ' +
+            `(${this.connection.escape(userId)}, ` +
+            `${this.connection.escape(date)}, ` +
+            `${this.connection.escape(points_punktualnosc)}, ` +
+            `${this.connection.escape(points_przygotowanie)}, ` +
+            `${this.connection.escape(points_efekt)}` +
+            `${this.connection.escape(points_skupienie)})`;
+
+        this.connection.query(query, (err3, results) => {
+            if (err3) {
+                console.error(err3);
+                callback({ err: err3 });
+                return;
+            }
+
+            const newPointsRowId = results.insertId;
+            callback({ newPointsRowId });
+        });
+    }
+
+    addPlayer({ username, password, name, surname, role, dragon_id, team_id, id }, callback) {
+        const hash = (password !== undefined) ? bcrypt.hashSync(password, 11) : undefined;
+        const user = { username, password: hash, name, surname, role, dragon_id, team_id };
+
+        /* eslint camelcase: "warn" */
+        let query;
+        if (id === undefined) {
+            query = 'INSERT INTO Players (username, password, name, surname, role, dragon_id, team_id) VALUES ' +
+                `(${this.connection.escape(username)}, ` +
+                `${this.connection.escape(hash)}, ` +
+                `${this.connection.escape(name)}, ` +
+                `${this.connection.escape(surname)}, ` +
+                `${this.connection.escape(role)}, ` +
+                `${this.connection.escape(dragon_id)}, ` +
+                `${this.connection.escape(team_id)})`;
+        } else {
+            query = 'UPDATE Players SET ' +
+                `${Object.keys(user).filter(key => user[key] !== undefined).map(key => `${mysql.escapeId(key)} = ${mysql.escape(user[key])}`).join(', ')} ` +
+                `WHERE id=${mysql.escape(id)}`;
+        }
+
+        this.connection.query(query, (err3, results) => {
+            if (err3) {
+                console.error(err3);
+                callback({ err: err3 });
+                return;
+            }
+
+            if (id === undefined) {
+                const newUserId = results.insertId;
+                console.log(`Created new user with id: ${newUserId}`);
+                callback({ newUserId });
+            } else {
+                console.log(`Updated user with id: ${id}`);
+                callback({ newUserId: id });
+            }
+        });
+    }
+
+    deleteUser(userId, callback) {
+        this.connection.query(`SELECT role FROM Players WHERE id=${mysql.escape(userId)}`, (err, results) => {
             if (err) {
                 console.error(err);
                 callback({ err });
                 return;
             }
 
-            bcrypt.hash(password, salt, (err2, hash) => {
+            if (results.length !== 1) {
+                callback({ err: 'err' });
+                return;
+            }
+
+            this.connection.query('SELECT id FROM Players WHERE role="admin"', (err2, results2) => {
                 if (err2) {
                     console.error(err2);
                     callback({ err: err2 });
                     return;
                 }
 
-                const query = 'INSERT INTO Players (username, password, name, surname, role) VALUES ' +
-                    `(${this.connection.escape(username)}, ` +
-                    `${this.connection.escape(hash)}, ` +
-                    `${this.connection.escape(name)}, ` +
-                    `${this.connection.escape(surname)}, ` +
-                    `${this.connection.escape(role)})`;
+                if (results[0].role === 'admin' && results2.length < 2) {
+                    console.log('Can\'t delete user, it is the last admin');
+                    callback({ err: 'err' });
+                    return;
+                }
 
-                this.connection.query(query, (err3, results) => {
+                this.connection.query(`DELETE FROM Players WHERE id=${mysql.escape(userId)}`, (err3, results3) => {
                     if (err3) {
                         console.error(err3);
                         callback({ err: err3 });
                         return;
                     }
 
-                    const newUserId = results.insertId;
-                    console.log(`Created new user with id: ${newUserId}`);
-                    callback({ newUserId });
+                    if (results3.affectedRows !== 1) {
+                        callback({ err: 'err' });
+                        return;
+                    }
+
+                    callback({ ok: 'ok' });
                 });
             });
         });

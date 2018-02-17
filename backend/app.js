@@ -172,6 +172,26 @@ const server = http.createServer((req, res) => {
                     });
                 }
             });
+        } else if (req.url.substr(0, '/delete_user'.length) === '/delete_user') {
+            databaseManager.getUserFromCookie(cookies.token, (result) => {
+                if (result.err !== undefined || result.user === undefined || result.user.role !== 'admin') {
+                    res.writeHead(403);
+                    res.end();
+                } else if (req.url.split('?')[1] === undefined || req.url.split('?')[1].split('=')[1] === undefined) {
+                    res.writeHead(400);
+                    res.end();
+                } else {
+                    const userId = req.url.split('?')[1].split('=')[1];
+                    databaseManager.deleteUser(userId, (result2) => {
+                        if (result2.ok !== undefined) {
+                            res.end(JSON.stringify({ ok: 'ok' }));
+                        } else {
+                            res.writeHead(500);
+                            res.end();
+                        }
+                    });
+                }
+            });
         } else if (req.url.search(/\./) === -1) {
             res.writeHead(filesMap['/'].code, filesMap['/'].headers);
             res.end(fs.readFileSync(`${CONFIG.httpBasePath}/${filesMap['/'].file}`));
@@ -242,25 +262,31 @@ const server = http.createServer((req, res) => {
                         console.log(fields.filename);
                     });
                 } else if (req.url === '/add_user') {
+                    console.log(fields);
                     databaseManager.getUserFromCookie(cookies.token, (result) => {
                         if (result.err !== undefined || result.user === undefined || result.user.role !== 'admin') {
                             res.writeHead(403);
                             res.end();
-                        } else if (fields.username[0] !== undefined
-                                && fields.name[0] !== undefined
-                                && fields.surname[0] !== undefined
-                                && fields.password[0] !== undefined
-                                && fields.role[0] !== undefined
-                            ) {
-                            databaseManager.addPlayer(fields.username[0], fields.password[0],
-                                fields.name[0], fields.surname[0], fields.role[0], (result2) => {
-                                    if (result2.newUserId !== undefined) {
-                                        res.end(JSON.stringify({ ok: 'ok' }));
-                                    } else {
-                                        res.writeHead(500);
-                                        res.end(JSON.stringify({ err: 'err' }));
-                                    }
-                                });
+                        } else if (
+                            (fields.id !== undefined && fields.id[0] !== undefined)
+                            || (fields.username !== undefined && fields.username[0] !== undefined
+                                && fields.name !== undefined && fields.name[0] !== undefined
+                                && fields.surname !== undefined && fields.surname[0] !== undefined
+                                && fields.password !== undefined && fields.password[0] !== undefined
+                                && fields.role !== undefined && fields.role[0] !== undefined
+                            )) {
+                            const newUser = {};
+                            Object.keys(fields).forEach((name) => {
+                                newUser[name] = fields[name][0];
+                            });
+                            databaseManager.addPlayer(newUser, (result2) => {
+                                if (result2.newUserId !== undefined) {
+                                    res.end(JSON.stringify({ ok: 'ok' }));
+                                } else {
+                                    res.writeHead(500);
+                                    res.end(JSON.stringify({ err: 'err' }));
+                                }
+                            });
                         } else {
                             res.writeHead(400);
                             res.end(JSON.stringify({ err: 'err' }));

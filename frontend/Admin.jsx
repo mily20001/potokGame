@@ -10,7 +10,8 @@ import AdminSidebar from './AdminSidebar';
 import AdminNavbar from './AdminNavbar';
 import FileUploader from './FileUploader';
 import AdminMapManager from './AdminMapManager';
-import AdminAddUser from './AdminAddUser';
+import AdminUsers from './AdminUsers';
+import AdminPoints from './AdminPoints';
 
 export default class Admin extends Component {
     constructor(props) {
@@ -59,7 +60,7 @@ export default class Admin extends Component {
 
     render() {
         const mainStyle = {
-            marginLeft: this.state.sidebarHidden ? 0 : `${this.sidebarWidth}px`,
+            paddingLeft: this.state.sidebarHidden ? 0 : `${this.sidebarWidth}px`,
         };
 
         return (
@@ -87,9 +88,13 @@ export default class Admin extends Component {
                         component={AdminMapManager}
                     />
                     <Route
+                        path="/admin/users"
+                        render={() => <AdminUsers databaseObjects={this.props.databaseObjects} />}
+                    />
+                    <Route
                         exact
-                        path="/admin/users/add"
-                        render={() => <AdminAddUser databaseObjects={this.props.databaseObjects} />}
+                        path="/admin/points"
+                        render={() => <AdminPoints databaseObjects={this.props.databaseObjects} />}
                     />
                 </div>
             </div>

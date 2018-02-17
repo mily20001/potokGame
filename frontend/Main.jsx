@@ -4,6 +4,7 @@ import {
     Route,
 } from 'react-router-dom';
 import createBrowserHistory from 'history/createBrowserHistory';
+import Popup from 'react-popup';
 
 import App from './App';
 import Admin from './Admin';
@@ -17,6 +18,7 @@ export default class Main extends Component {
             user: {},
             databaseObjects: {
                 getImage: this.getImage.bind(this),
+                refreshDatabase: this.refreshDatabase.bind(this),
             },
         };
 
@@ -43,19 +45,23 @@ export default class Main extends Component {
     }
 
     getDatabaseData(dataURL, dataId) {
-        const xhr = new XMLHttpRequest();
-        xhr.open('GET', dataURL, true);
-        xhr.onload = () => {
-            const result = JSON.parse(xhr.responseText);
-            if (result[dataId] !== undefined) {
-                this.setState({ databaseObjects:
-                    { ...this.state.databaseObjects, [dataId]: result[dataId] } });
-                console.log(result[dataId]);
-            } else {
-                console.log(`error while getting ${dataId}`);
-            }
-        };
-        xhr.send();
+        return new Promise((resolve, reject) => {
+            const xhr = new XMLHttpRequest();
+            xhr.open('GET', dataURL, true);
+            xhr.onload = () => {
+                const result = JSON.parse(xhr.responseText);
+                if (result[dataId] !== undefined) {
+                    this.setState({
+                        databaseObjects: { ...this.state.databaseObjects, [dataId]: result[dataId] },
+                    }, resolve);
+                    console.log(result[dataId]);
+                } else {
+                    console.log(`error while getting ${dataId}`);
+                    reject();
+                }
+            };
+            xhr.send();
+        });
     }
 
     // TODO maybe switch to browser storage
@@ -97,7 +103,7 @@ export default class Main extends Component {
 
     setUser(user) {
         console.log(user);
-        if (user === {}) {
+        if (Object.keys(user).length === 0) {
             this.history.push('/login');
         } else if (user.role === 'admin') {
             this.history.push('/admin');
@@ -109,10 +115,17 @@ export default class Main extends Component {
         this.setState({ user });
     }
 
+    refreshDatabase(dataId) {
+        if (dataId === 'users') {
+            this.getDatabaseData('/get_users', 'users');
+        }
+    }
+
     render() {
         return (
             <Router history={this.history}>
                 <div className="container fullpage-container">
+                    <Popup />
                     <Route exact path="/" component={App} />
                     <Route
                         path="/admin"
