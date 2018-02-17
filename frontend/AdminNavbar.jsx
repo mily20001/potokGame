@@ -24,6 +24,6 @@ export default function AdminNavbar(props) {
 
 AdminNavbar.propTypes = {
     username: PropTypes.string.isRequired,
-    toggleSidebar: PropTypes.bool.isRequired,
+    toggleSidebar: PropTypes.func.isRequired,
     width: PropTypes.number.isRequired,
 };
