@@ -1,0 +1,55 @@
+.points-last {
+  border-right: solid #32383e 1px;
+}
+
+.points-first {
+  border-left: solid #32383e 1px;
+}
+
+.points-table th {
+  border-right: solid #32383e 1px;
+  border-left: solid #32383e 1px;
+}
+
+.points-table th, td {
+  height: 25px;
+  user-select: none;
+}
+
+.points-table-container {
+  flex-grow: 1;
+  overflow-x: scroll;
+  display: flex;
+}
+//.points-table table {
+//
+//}
+
+.points-vals {
+  width: 20px;
+}
+
+
+.tables-container {
+  width: 90%;
+  display: flex;
+}
+
+.points-changed {
+  background-color: #a9212c;
+}
+
+.points-ongoing {
+  background-color: #a97e19;
+}
+
+.points-saved {
+  background-color: #128111;
+}
+
+.table-part {
+  //float: left;
+  width: 75px;
+  //flex-grow: 1;
+  border: solid 1px #343b41;
+}

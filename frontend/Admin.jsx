@@ -37,6 +37,7 @@ export default class Admin extends Component {
     componentDidMount() {
         this.updateWindowDimensions();
         window.addEventListener('resize', this.updateWindowDimensions);
+        document.title = 'Panel Administratora';
     }
 
     updateWindowDimensions() {

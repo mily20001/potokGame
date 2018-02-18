@@ -17,6 +17,8 @@ const filesMap = {
 
 const databaseManager = new DatabaseManager();
 
+databaseManager.propagatePoints();
+
 // databaseManager.addPlayer('admin', 'milosz', 'Miłosz', 'D.', () => {});
 // databaseManager.login('admin', 'milosz', () => {});
 // databaseManager.getUserFromCookie('cc0aa36fac252b77a69a810451fa4caa339522051e91
@@ -203,7 +205,7 @@ const server = http.createServer((req, res) => {
     } else if (req.method.toUpperCase() === 'POST') {
         let body = '';
 
-        if (req.url === '/upload' || req.url === '/add_user') {
+        if (req.url === '/upload' || req.url === '/add_user' || req.url === '/modify_points') {
             const form = new multiparty.Form();
 
             form.on('error', (err) => {
@@ -290,6 +292,27 @@ const server = http.createServer((req, res) => {
                         } else {
                             res.writeHead(400);
                             res.end(JSON.stringify({ err: 'err' }));
+                        }
+                    });
+                } else if (req.url === '/modify_points') {
+                    console.log(fields);
+                    databaseManager.getUserFromCookie(cookies.token, (result) => {
+                        if (result.err !== undefined || result.user === undefined || result.user.role !== 'admin') {
+                            res.writeHead(403);
+                            res.end();
+                        } else {
+                            // FIXME can crash server!
+                            const changes = Object.keys(fields).reduce((allChanges, changeId) =>
+                                ({ ...allChanges, [changeId]: fields[changeId][0].split(',') }), {});
+
+                            databaseManager.changePoints(changes, (result2) => {
+                                if (result2.ok === undefined) {
+                                    res.writeHead(500);
+                                    res.end(JSON.stringify({ err: 'err' }));
+                                } else {
+                                    res.end(JSON.stringify({ ok: 'ok' }));
+                                }
+                            });
                         }
                     });
                 }

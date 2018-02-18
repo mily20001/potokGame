@@ -86,6 +86,113 @@ export default class DatabaseManager {
         });
     }
 
+    propagatePoints() {
+        this.connection.query('SELECT id from Players WHERE role = "player"', (err, results) => {
+            if (err) {
+                console.error(err);
+                return;
+            }
+
+            const users = results.map(user => user.id);
+
+            users.forEach((userId) => {
+                const query = 'SELECT DISTINCT date FROM Points WHERE (date) NOT IN ' +
+                    `(SELECT DISTINCT date FROM Points WHERE player_id = ${mysql.escape(userId)})`;
+
+                this.connection.query(query, (err2, results2) => {
+                    if (err2) {
+                        console.error(err2);
+                        return;
+                    }
+
+                    if (results2.length > 0) {
+                        const insertQuery = 'INSERT INTO Points (player_id, date, ' +
+                            'points_punktualnosc, points_przygotowanie, points_skupienie, ' +
+                            'points_efekt) VALUES ' +
+                            `${results2.map(row =>
+                                `(${mysql.escape(userId)}, ${mysql.escape(row.date)}, 0, 0, 0, 0)`)
+                                .join(', ')}`;
+
+                        console.log(`Inserting ${results2.length} missing point rows`);
+
+                        this.connection.query(insertQuery, (err3) => {
+                            if (err3) {
+                                console.error(err3);
+                            }
+                        });
+                    }
+                });
+            });
+        });
+    }
+
+    changePoints(changes, callback) {
+        try {
+            this.connection.beginTransaction((err) => {
+                if (err) {
+                    console.error(err);
+                    callback({ err });
+                    return;
+                }
+
+                const queriesToBeDone = Object.keys(changes).length;
+                let queriesDone = 0;
+                let errorOccured = false;
+
+                Object.keys(changes).forEach((id) => {
+                    if (errorOccured) {
+                        return;
+                    }
+                    if (isNaN(parseInt(id))) {
+                        console.log(`Wrong points id provided: ${id}`);
+                        errorOccured = true;
+                        callback({ err: 'err' });
+                        return;
+                    }
+                    if (!(changes[id] instanceof Array) || changes[id].length !== 4) {
+                        console.log(`Wrong points array provided: ${changes[id]}`);
+                        errorOccured = true;
+                        callback({ err: 'err' });
+                        return;
+                    }
+
+                    const query = 'UPDATE Points SET ' +
+                        `points_punktualnosc = ${mysql.escape(changes[id][0])}, ` +
+                        `points_przygotowanie = ${mysql.escape(changes[id][1])}, ` +
+                        `points_skupienie = ${mysql.escape(changes[id][2])}, ` +
+                        `points_efekt = ${mysql.escape(changes[id][3])} ` +
+                        `WHERE id=${mysql.escape(id)}`;
+
+                    this.connection.query(query, (error) => {
+                        if (error) {
+                            console.error(error);
+                            errorOccured = true;
+                            this.connection.rollback();
+                            callback({ err: 'err' });
+                            return;
+                        }
+
+                        queriesDone++;
+                        if (queriesToBeDone === queriesDone) {
+                            this.connection.commit((err2) => {
+                                if (err2) {
+                                    console.error(err2);
+                                    callback({ err: 'err' });
+                                    return;
+                                }
+
+                                callback({ ok: 'ok' });
+                            });
+                        }
+                    });
+                });
+            });
+        } catch (e) {
+            console.error(e);
+            callback({ err: 'err' });
+        }
+    }
+
     getPlayers(requestRole, callback) {
         const query = `SELECT * from Players ${requestRole === 'admin' ? '' : 'WHERE role = "player"'}`;
         this.connection.query(query, (err, results) => {
@@ -114,6 +221,7 @@ export default class DatabaseManager {
 
                         results2.forEach((pointsRow) => {
                             players[key].points[pointsRow.date] = {
+                                id: pointsRow.id,
                                 points_punktualnosc: pointsRow.points_punktualnosc,
                                 points_przygotowanie: pointsRow.points_przygotowanie,
                                 points_skupienie: pointsRow.points_skupienie,
