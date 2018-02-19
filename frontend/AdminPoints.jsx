@@ -450,11 +450,11 @@ export default class AdminPoints extends Component {
                 return { id, points: this.state.changes[id] || points };
             });
 
-            const tmpDate = new Date(date);
-            const parsedDate = `${tmpDate.getDate()}.${`0${(tmpDate.getMonth() + 1)}`.slice(-2)}.${tmpDate.getFullYear()}`;
+            // const tmpDate = new Date(date);
+            // const parsedDate = `${tmpDate.getDate()}.${`0${(tmpDate.getMonth() + 1)}`.slice(-2)}.${tmpDate.getFullYear()}`;
 
             return (<AdminPointsMainTable
-                headerDate={parsedDate}
+                headerDate={date}
                 dataArray={pointsArr}
                 valuesOnEdit={this.handlePointsToggle}
                 changesList={changesList}
@@ -481,7 +481,7 @@ export default class AdminPoints extends Component {
         return (
             <div className="container bg-dark text-light tables-container" style={{ textAlign: 'center' }}>
                 <div style={{ whiteSpace: 'nowrap' }}>
-                    <table className="table table-dark table-hover">
+                    <table className="table table-dark table-hover table-names">
                         <thead>
                             <tr>
                                 <th colSpan={2}>Gracz</th>
@@ -498,6 +498,9 @@ export default class AdminPoints extends Component {
                 </div>
                 <div className="points-table-container" id="scrollable-table">
                     {pointsTable}
+                </div>
+                <div className="newPoints">
+                    <AdminPointsMainTable dataArray={Object.keys(this.state.userPoints)} />
                 </div>
             </div>
 
