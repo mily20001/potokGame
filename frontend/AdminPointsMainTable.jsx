@@ -57,7 +57,7 @@ export default class AdminPointsMainTable extends Component {
             <table className="table table-dark table-hover table-part">
                 <thead>
                     <tr>
-                        <AdminPointsDateHeader date={this.props.headerDate} />
+                        <AdminPointsDateHeader date={this.props.headerDate} isEditable />
                     </tr>
                     <tr>
                         <th>P</th>

@@ -57,3 +57,40 @@
 .table-names {
   border: solid 1px #343b41;
 }
+
+.date-header-editable {
+  //cursor: pointer;
+}
+
+.date-header-null-editable {
+  cursor: pointer;
+}
+
+.date-header {
+  height: 30px;
+  white-space: nowrap;
+  overflow: hidden;
+  min-width: 150px;
+  //transition: 3s;
+}
+
+//.date-header:hover {
+//  min-width: 300px;
+//}
+
+.date-header-editing input {
+  width: 150px;
+  height: 30px;
+}
+
+.date-header-editing {
+  padding: 9px !important;
+  //width: 155px;
+}
+
+.date-header-button {
+  display: inline !important;
+  padding-right: 10px;
+  padding-left: 10px;
+  cursor: pointer;
+}
