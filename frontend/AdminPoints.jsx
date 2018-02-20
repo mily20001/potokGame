@@ -4,6 +4,18 @@ import PropTypes from 'prop-types';
 import AdminPointsMainTable from './AdminPointsMainTable';
 import './AdminPoints.scss';
 
+function zeroPad(a) {
+    return `0${a}`.slice(-2);
+}
+
+function dateToISOString(date) {
+    const dateObj = new Date(date);
+    const dateString = `${dateObj.getFullYear()}_` +
+        `${zeroPad(dateObj.getMonth() + 1)}_${zeroPad(dateObj.getDate())}`;
+
+    return dateString;
+}
+
 export default class AdminPoints extends Component {
     constructor(props) {
         super(props);
@@ -47,6 +59,8 @@ export default class AdminPoints extends Component {
         this.commitChanges = this.commitChanges.bind(this);
         this.updateNewDate = this.updateNewDate.bind(this);
         this.handlePointsToggle = this.handlePointsToggle.bind(this);
+        this.deleteDate = this.deleteDate.bind(this);
+        this.changeDate = this.changeDate.bind(this);
 
         this.commitIntervalId = setInterval(this.commitChanges, 10000);
     }
@@ -165,6 +179,79 @@ export default class AdminPoints extends Component {
             }
         };
         xhr.send(data);
+    }
+
+    deleteDate(tmpDateToRemove) {
+        const dateToRemove = new Date(tmpDateToRemove);
+
+        const dateString = dateToISOString(tmpDateToRemove);
+
+        const reqString = `/delete_points_from_date?date=${dateString}`;
+
+        const xhr = new XMLHttpRequest();
+        xhr.open('GET', reqString, true);
+        xhr.onload = () => {
+            console.log(xhr.responseText);
+            try {
+                const uploadResponse = JSON.parse(xhr.responseText);
+                if (uploadResponse.ok !== undefined) {
+                    const dates = [...this.state.dates];
+                    const filteredDates = dates.filter(date =>
+                        (new Date(date)).valueOf() !== dateToRemove.valueOf());
+
+                    this.setState({ dates: filteredDates });
+                } else {
+                    // TODO print some error
+                    /**/
+                }
+            } catch (reqErr) {
+                /**/
+            }
+        };
+        xhr.send();
+    }
+
+    changeDate(oldDate, newDate) {
+        const oldDateString = dateToISOString(oldDate);
+
+        const newDateString = dateToISOString(newDate);
+
+        const reqString = `/change_points_date?oldDate=${oldDateString}&newDate=${newDateString}`;
+
+        console.log(reqString);
+
+        const xhr = new XMLHttpRequest();
+        xhr.open('GET', reqString, true);
+        xhr.onload = () => {
+            console.log(xhr.responseText);
+            try {
+                const uploadResponse = JSON.parse(xhr.responseText);
+                if (uploadResponse.ok !== undefined) {
+                    const dates = [...this.state.dates];
+                    const updatedDates = dates.map((date) => {
+                        if ((new Date(date)).valueOf() === (new Date(oldDate)).valueOf()) {
+                            return (new Date(newDate)).valueOf();
+                        }
+                        return date;
+                    });
+
+                    const userPoints = { ...this.state.userPoints };
+
+                    Object.keys(userPoints).forEach((userId) => {
+                        userPoints[userId][(new Date(newDate)).valueOf()]
+                            = userPoints[userId][(new Date(oldDate)).valueOf()];
+                    });
+
+                    this.setState({ dates: updatedDates, userPoints: { ...userPoints } });
+                } else {
+                    // TODO print some error
+                    /**/
+                }
+            } catch (reqErr) {
+                /**/
+            }
+        };
+        xhr.send();
     }
 
     handlePointsToggle(id, index) {
@@ -450,9 +537,6 @@ export default class AdminPoints extends Component {
                 return { id, points: this.state.changes[id] || points };
             });
 
-            // const tmpDate = new Date(date);
-            // const parsedDate = `${tmpDate.getDate()}.${`0${(tmpDate.getMonth() + 1)}`.slice(-2)}.${tmpDate.getFullYear()}`;
-
             return (<AdminPointsMainTable
                 headerDate={date}
                 dataArray={pointsArr}
@@ -460,6 +544,8 @@ export default class AdminPoints extends Component {
                 changesList={changesList}
                 ongoingChanges={this.state.ongoingChanges}
                 savedChanges={this.state.savedChanges}
+                onDateDelete={this.deleteDate}
+                onDateChange={this.changeDate}
             />);
         });
 
@@ -500,7 +586,9 @@ export default class AdminPoints extends Component {
                     {pointsTable}
                 </div>
                 <div className="newPoints">
-                    <AdminPointsMainTable dataArray={Object.keys(this.state.userPoints)} />
+                    <AdminPointsMainTable
+                        dataArray={Object.keys(this.state.userPoints)}
+                    />
                 </div>
             </div>
 

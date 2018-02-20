@@ -12,7 +12,6 @@ export default class AdminPointsMainTable extends Component {
     render() {
         const dataRows =
             this.props.dataArray.map((row) => {
-            // console.log('this.props.headerDate !== undefined', this.props.headerDate !== undefined, this.props.headerDate);
                 if (this.props.headerDate !== undefined) {
                     const cols = row.points.map((data, index) => {
                         let className = '';
@@ -57,7 +56,14 @@ export default class AdminPointsMainTable extends Component {
             <table className="table table-dark table-hover table-part">
                 <thead>
                     <tr>
-                        <AdminPointsDateHeader date={this.props.headerDate} isEditable />
+                        <AdminPointsDateHeader
+                            date={this.props.headerDate}
+                            isEditable
+                            onDelete={() => this.props.onDateDelete(this.props.headerDate)}
+                            onSave={(newDate) => {
+                                this.props.onDateChange(this.props.headerDate, newDate);
+                            }}
+                        />
                     </tr>
                     <tr>
                         <th>P</th>
@@ -83,6 +89,8 @@ AdminPointsMainTable.propTypes = {
     changesList: PropTypes.object,
     ongoingChanges: PropTypes.object,
     savedChanges: PropTypes.object,
+    onDateDelete: PropTypes.func,
+    onDateChange: PropTypes.func,
 };
 
 AdminPointsMainTable.defaultProps = {
@@ -94,4 +102,6 @@ AdminPointsMainTable.defaultProps = {
     ongoingChanges: {},
     savedChanges: {},
     dataArray: [],
+    onDateDelete: () => {},
+    onDateChange: () => {},
 };

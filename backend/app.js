@@ -194,6 +194,90 @@ const server = http.createServer((req, res) => {
                     });
                 }
             });
+            /**
+             * date has to be in format YYYY_MM_DD
+             */
+        } else if (req.url.substr(0, '/change_points_date'.length) === '/change_points_date') {
+            databaseManager.getUserFromCookie(cookies.token, (result) => {
+                if (result.err !== undefined || result.user === undefined || result.user.role !== 'admin') {
+                    res.writeHead(403);
+                    res.end();
+                } else if (req.url.split('?')[1] === undefined) {
+                    res.writeHead(400);
+                    res.end();
+                } else if (req.url.split('?')[1].split('&').length !== 2) {
+                    res.writeHead(400);
+                    res.end();
+                } else {
+                    let paramsOk = true;
+                    const reqParams = req.url.split('?')[1].split('&').reduce((allParams, param) => {
+                        if (param.split('=').length !== 2) {
+                            paramsOk = false;
+                        }
+                        return { ...allParams, [param.split('=')[0]]: param.split('=')[1].replace(/_/g, '-') };
+                    }, {});
+
+                    console.log(reqParams);
+
+                    if (!(reqParams.newDate && reqParams.oldDate)) {
+                        paramsOk = false;
+                    }
+
+                    if (isNaN((new Date(reqParams.newDate)).valueOf())
+                        || isNaN((new Date(reqParams.oldDate)).valueOf())
+                    ) {
+                        paramsOk = false;
+                    }
+
+                    if (!paramsOk) {
+                        res.writeHead(400);
+                        res.end();
+                    } else {
+                        databaseManager.changePointsDate(reqParams.oldDate, reqParams.newDate,
+                            (result2) => {
+                                if (result2.ok !== undefined) {
+                                    res.end(JSON.stringify({ ok: 'ok' }));
+                                } else {
+                                    res.writeHead(500);
+                                    res.end();
+                                }
+                            });
+                    }
+                }
+            });
+        } else if (req.url.substr(0, '/delete_points_from_date'.length) === '/delete_points_from_date') {
+            databaseManager.getUserFromCookie(cookies.token, (result) => {
+                if (result.err !== undefined || result.user === undefined || result.user.role !== 'admin') {
+                    res.writeHead(403);
+                    res.end();
+                } else if ((req.url.split('?')[1] || req.url.split('?')[1].split('=')[1]) === undefined) {
+                    res.writeHead(400);
+                    res.end();
+                } else {
+                    let paramsOk = true;
+                    const reqParam = req.url.split('?')[1].split('=')[1].replace(/_/g, '-');
+
+                    console.log(reqParam);
+
+                    if (isNaN((new Date(reqParam)).valueOf())) {
+                        paramsOk = false;
+                    }
+
+                    if (!paramsOk) {
+                        res.writeHead(400);
+                        res.end();
+                    } else {
+                        databaseManager.deletePointsFromDate(reqParam, (result2) => {
+                            if (result2.ok !== undefined) {
+                                res.end(JSON.stringify({ ok: 'ok' }));
+                            } else {
+                                res.writeHead(500);
+                                res.end();
+                            }
+                        });
+                    }
+                }
+            });
         } else if (req.url.search(/\./) === -1) {
             res.writeHead(filesMap['/'].code, filesMap['/'].headers);
             res.end(fs.readFileSync(`${CONFIG.httpBasePath}/${filesMap['/'].file}`));

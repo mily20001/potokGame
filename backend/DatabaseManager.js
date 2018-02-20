@@ -143,7 +143,7 @@ export default class DatabaseManager {
                     if (errorOccured) {
                         return;
                     }
-                    if (isNaN(parseInt(id))) {
+                    if (isNaN(parseInt(id, 10))) {
                         console.log(`Wrong points id provided: ${id}`);
                         errorOccured = true;
                         callback({ err: 'err' });
@@ -191,6 +191,35 @@ export default class DatabaseManager {
             console.error(e);
             callback({ err: 'err' });
         }
+    }
+
+    changePointsDate(oldDate, newDate, callback) {
+        const query = 'UPDATE Points SET date = ' +
+            `DATE_FORMAT(${mysql.escape(newDate)}, "%Y-%m-%d")` +
+            `WHERE date = DATE_FORMAT(${mysql.escape(oldDate)}, "%Y-%m-%d")`;
+
+        this.connection.query(query, (err) => {
+            if (err) {
+                console.error(err);
+                callback({ err });
+            } else {
+                callback({ ok: 'ok' });
+            }
+        });
+    }
+
+    deletePointsFromDate(date, callback) {
+        const query = 'DELETE FROM Points WHERE ' +
+            `date = DATE_FORMAT(${mysql.escape(date)}, "%Y-%m-%d")`;
+
+        this.connection.query(query, (err) => {
+            if (err) {
+                console.error(err);
+                callback({ err });
+            } else {
+                callback({ ok: 'ok' });
+            }
+        });
     }
 
     getPlayers(requestRole, callback) {
