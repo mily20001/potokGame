@@ -26,6 +26,7 @@ export default class AdminPoints extends Component {
             changes: {},
             savedChanges: {},
             ongoingChanges: {},
+            addNewDatePanelVisible: false,
         };
 
         this.idToUserAndDate = {};
@@ -564,6 +565,10 @@ export default class AdminPoints extends Component {
             );
         }).filter(val => val !== undefined);
 
+        const newPointsDivStyle = {
+            width: `${this.state.addNewDatePanelVisible ? 250 : 50}px`,
+        };
+
         return (
             <div className="container bg-dark text-light tables-container" style={{ textAlign: 'center' }}>
                 <div style={{ whiteSpace: 'nowrap' }}>
@@ -585,10 +590,22 @@ export default class AdminPoints extends Component {
                 <div className="points-table-container" id="scrollable-table">
                     {pointsTable}
                 </div>
-                <div className="newPoints">
-                    <AdminPointsMainTable
-                        dataArray={Object.keys(this.state.userPoints)}
-                    />
+                <div className="new-points-container" style={newPointsDivStyle}>
+                    <div
+                        className="new-points-table"
+                        style={{ width: `${this.state.addNewDatePanelVisible ? 250 : 0}px` }}
+                    >
+                        <AdminPointsMainTable
+                            dataArray={Object.keys(this.state.userPoints)}
+                        />
+                    </div>
+                    <div
+                        className="new-points-toggle-button"
+                        style={{ width: `${this.state.addNewDatePanelVisible ? 0 : 50}px` }}
+                        onClick={() => this.setState({ addNewDatePanelVisible: true })}
+                    >
+                        <i className="fa fa-plus" />
+                    </div>
                 </div>
             </div>
 

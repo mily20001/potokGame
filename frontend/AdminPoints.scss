@@ -94,3 +94,32 @@
   padding-left: 10px;
   cursor: pointer;
 }
+
+.new-points-container {
+  display: flex;
+  transition: width 1s;
+}
+
+.new-points-toggle-button {
+  flex-grow: 1;
+  transition: inherit;
+  overflow: hidden;
+  background-color: #212529;
+  cursor: pointer;
+}
+
+.new-points-toggle-button i {
+  position: relative;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.new-points-table {
+  flex-grow: 1;
+  transition: inherit;
+  overflow: hidden;
+}
+
+.new-points-table .table-part {
+  width: 250px;
+}
