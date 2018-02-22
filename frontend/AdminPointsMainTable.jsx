@@ -11,8 +11,12 @@ export default class AdminPointsMainTable extends Component {
 
     render() {
         const dataRows =
-            this.props.dataArray.map((row) => {
+            this.props.dataArray.map((row, rowIndex) => {
                 const cols = row.points.map((data, index) => {
+                    if (!this.props.isEditable) {
+                        return (<td>{data}</td>);
+                    }
+
                     let className = '';
 
                     const isChanged = (this.props.changesList[row.id]
@@ -39,7 +43,14 @@ export default class AdminPointsMainTable extends Component {
                         {isOngoing ? ' ' : data}
                     </td>);
                 });
-                return (<tr>{cols}</tr>);
+                return (
+                    <tr
+                        onMouseEnter={() => this.props.onMouseEnter(rowIndex)}
+                        onMouseLeave={() => this.props.onMouseLeave(rowIndex)}
+                    >
+                        {cols}
+                    </tr>
+                );
             });
 
         return (
@@ -72,21 +83,21 @@ export default class AdminPointsMainTable extends Component {
 
 AdminPointsMainTable.propTypes = {
     headerDate: PropTypes.object.isRequired,
-    headerDateEditable: PropTypes.bool,
     dataArray: PropTypes.array.isRequired, // [[0, 1, 1, 1], [1, 1, 1, 1], ...]
-    valuesEditable: PropTypes.bool,
+    isEditable: PropTypes.bool,
     valuesOnEdit: PropTypes.func,
     changesList: PropTypes.object,
     ongoingChanges: PropTypes.object,
     savedChanges: PropTypes.object,
     onDateDelete: PropTypes.func,
     onDateChange: PropTypes.func,
+    onMouseEnter: PropTypes.func,
+    onMouseLeave: PropTypes.func,
 };
 
 AdminPointsMainTable.defaultProps = {
     headerDate: undefined,
-    headerDateEditable: false,
-    valuesEditable: false,
+    isEditable: false,
     valuesOnEdit: () => {},
     changesList: [],
     ongoingChanges: {},
@@ -94,4 +105,6 @@ AdminPointsMainTable.defaultProps = {
     dataArray: [],
     onDateDelete: () => {},
     onDateChange: () => {},
+    onMouseEnter: () => {},
+    onMouseLeave: () => {},
 };

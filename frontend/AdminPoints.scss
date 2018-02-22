@@ -31,8 +31,11 @@
 
 
 .tables-container {
-  width: 90%;
+  width: 100%;
+  min-width: 100%;
   display: flex;
+  text-align: center;
+
 }
 
 .points-changed {
@@ -63,7 +66,9 @@
 }
 
 .date-header-null-editable {
-  cursor: pointer;
+  display: flex;
+  height: 24px;
+  font-size: 24px;
 }
 
 .date-header {
@@ -122,4 +127,21 @@
 
 .new-points-table .table-part {
   width: 250px;
+}
+
+.name-hovered {
+  background-color: rgba(255,255,255,.075);
+}
+
+.empty-header-button {
+  flex-grow: 1;
+}
+
+.empty-header-button:hover {
+  background-color: rgba(255,255,255,.075);
+}
+
+.points-instruction-container {
+  padding-top: 20px;
+  font-size: 18px;
 }

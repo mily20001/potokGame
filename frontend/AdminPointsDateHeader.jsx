@@ -150,7 +150,6 @@ export default class AdminPointsDateHeader extends Component {
             );
         }
 
-        // TODO add cancel event to props
         if (this.state.changedDate !== undefined) {
             const tmpDate = new Date(this.state.changedDate);
             const parsedDate = `${tmpDate.getDate()}.${zeroPad(tmpDate.getMonth() + 1)}.${tmpDate.getFullYear()}`;
@@ -173,10 +172,18 @@ export default class AdminPointsDateHeader extends Component {
         return (
             <th
                 colSpan={4}
-                className="date-header date-header-null-editable"
-                onClick={this.startEdit}
+                className="date-header"
             >
-                <i className="fa fa-plus" />
+                <div className="date-header-null-editable">
+                    <i
+                        onClick={this.props.onDelete}
+                        className="date-header-button fa fa-times empty-header-button"
+                    />
+                    <i
+                        onClick={this.startEdit}
+                        className="date-header-button fa fa-plus empty-header-button"
+                    />
+                </div>
             </th>
         );
     }
