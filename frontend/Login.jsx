@@ -30,6 +30,10 @@ export default class Login extends Component {
         this.handleSubmit = this.handleSubmit.bind(this);
     }
 
+    componentDidMount() {
+        document.title = 'Zaloguj się';
+    }
+
     handleField(fieldName, event) {
         this.setState({ [fieldName]: event.target.value });
     }
@@ -123,5 +127,6 @@ export default class Login extends Component {
 
 Login.propTypes = {
     setUser: PropTypes.func.isRequired,
+    currentUser: PropTypes.object.isRequired,
 };
 

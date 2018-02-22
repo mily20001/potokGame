@@ -97,11 +97,34 @@ export default class AdminPointsDateHeader extends Component {
             const tmpDate = new Date(this.state.changedDate);
             const parsedDate = `${tmpDate.getFullYear()}-${zeroPad(tmpDate.getMonth() + 1)}-${zeroPad(tmpDate.getDate())}`;
             console.log(parsedDate);
+            if (hasDate) {
+                return (
+                    <th colSpan={4} className="date-header date-header-editing">
+                        <i onClick={this.cancel} className="date-header-button fa fa-times" />
+                        <input type="date" onChange={this.handleDateChange} value={parsedDate} />
+                        {(hasDate &&
+                        <i
+                            onClick={this.save}
+                            className="date-header-button fa fa-check"
+                        />
+                        ) ||
+                        <i
+                            onClick={() => this.setState({ isBeingChanged: false })}
+                            className="date-header-button fa fa-check"
+                        />
+                        }
+                    </th>
+                );
+            }
+
             return (
                 <th colSpan={4} className="date-header date-header-editing">
                     <i onClick={this.cancel} className="date-header-button fa fa-times" />
                     <input type="date" onChange={this.handleDateChange} value={parsedDate} />
-                    <i onClick={this.save} className="date-header-button fa fa-check" />
+                    <i
+                        onClick={() => this.setState({ isBeingChanged: false })}
+                        className="date-header-button fa fa-check"
+                    />
                 </th>
             );
         }
@@ -123,6 +146,22 @@ export default class AdminPointsDateHeader extends Component {
                     {this.state.hovered &&
                         <i onClick={this.startEdit} className="date-header-button fa fa-edit" />
                     }
+                </th>
+            );
+        }
+
+        // TODO add cancel event to props
+        if (this.state.changedDate !== undefined) {
+            const tmpDate = new Date(this.state.changedDate);
+            const parsedDate = `${tmpDate.getDate()}.${zeroPad(tmpDate.getMonth() + 1)}.${tmpDate.getFullYear()}`;
+            return (
+                <th
+                    colSpan={4}
+                    className="date-header date-header-editable"
+                >
+                    <i onClick={this.cancel} className="date-header-button fa fa-trash" />
+                    {parsedDate}
+                    <i onClick={this.save} className="date-header-button fa fa-save" />
                 </th>
             );
         }

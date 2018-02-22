@@ -121,7 +121,7 @@ export default class Main extends Component {
             if (Object.keys(user).length === 0) {
                 this.history.push('/login');
             } else if (user.role === 'admin') {
-                const destAddr = (this.redirectPath === '/' || this.redirectPath === '/loading')
+                const destAddr = (this.redirectPath === '/' || this.redirectPath === '/loading' || this.redirectPath === '/login')
                     ? '/admin' : this.redirectPath;
 
                 this.getAdminDatabaseObjects().then(() => this.history.push(destAddr));
