@@ -368,6 +368,7 @@ const server = http.createServer((req, res) => {
                             databaseManager.addPlayer(newUser, (result2) => {
                                 if (result2.newUserId !== undefined) {
                                     res.end(JSON.stringify({ ok: 'ok' }));
+                                    databaseManager.propagatePoints();
                                 } else {
                                     res.writeHead(500);
                                     res.end(JSON.stringify({ err: 'err' }));
