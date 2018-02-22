@@ -103,6 +103,7 @@ export default class AdminPoints extends Component {
     }
 
     componentWillUnmount() {
+        this.props.databaseObjects.refreshDatabase('users');
         clearInterval(this.commitIntervalId);
     }
 
