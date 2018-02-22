@@ -159,8 +159,12 @@ export default class AdminPointsDateHeader extends Component {
                     colSpan={4}
                     className="date-header date-header-editable"
                 >
-                    <i onClick={this.cancel} className="date-header-button fa fa-trash" />
+                    <i onClick={this.props.onDelete} className="date-header-button fa fa-trash" />
                     {parsedDate}
+                    <i
+                        onClick={() => this.setState({ isBeingChanged: true })}
+                        className="date-header-button fa fa-edit"
+                    />
                     <i onClick={this.save} className="date-header-button fa fa-save" />
                 </th>
             );

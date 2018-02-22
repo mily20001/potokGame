@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
+import RandomString from 'randomstring';
 
 import AdminPointsMainTable from './AdminPointsMainTable';
 import './AdminPoints.scss';
@@ -27,6 +28,7 @@ export default class AdminPoints extends Component {
             savedChanges: {},
             ongoingChanges: {},
             addNewDatePanelVisible: false,
+            newPointsArray: [],
         };
 
         this.idToUserAndDate = {};
@@ -62,8 +64,39 @@ export default class AdminPoints extends Component {
         this.handlePointsToggle = this.handlePointsToggle.bind(this);
         this.deleteDate = this.deleteDate.bind(this);
         this.changeDate = this.changeDate.bind(this);
+        this.handleNewPointsToggle = this.handleNewPointsToggle.bind(this);
+        this.handleNewPointsSave = this.handleNewPointsSave.bind(this);
 
         this.commitIntervalId = setInterval(this.commitChanges, 10000);
+    }
+
+    componentWillReceiveProps(nextProps) {
+        this.idToUserAndDate = {};
+
+        Object.keys(nextProps.databaseObjects.users).forEach((userId) => {
+            console.log(nextProps.databaseObjects.users[userId].role);
+            if (nextProps.databaseObjects.users[userId].role === 'admin') {
+                return;
+            }
+
+            this.state.userPoints[userId] = {};
+            Object.keys(nextProps.databaseObjects.users[userId].points).forEach((date) => {
+                const tmpDate = (new Date(date)).valueOf();
+
+                if (!this.state.dates.includes(tmpDate)) {
+                    this.state.dates.push(tmpDate);
+                }
+
+                const id = nextProps.databaseObjects.users[userId].points[date].id;
+
+                this.idToUserAndDate[id] = { userId, date: tmpDate };
+
+                this.state.userPoints[userId][tmpDate] =
+                    { ...nextProps.databaseObjects.users[userId].points[date] };
+            });
+        });
+
+        this.state.dates = this.state.dates.sort((a, b) => (new Date(a)) - (new Date(b)));
     }
 
     componentWillUnmount() {
@@ -74,8 +107,6 @@ export default class AdminPoints extends Component {
         console.log(fieldName, event.target.value);
         this.setState({ [fieldName]: event.target.value });
     }
-
-    // TODO handle modifying date
 
     commitChanges(e) {
         if (e !== undefined && typeof e.preventDefault === 'function') {
@@ -273,247 +304,53 @@ export default class AdminPoints extends Component {
         this.setState({ changes: { ...changes } });
     }
 
+    handleNewPointsToggle(id, index) {
+        const newPointsArray = [...this.state.newPointsArray];
+
+        newPointsArray[id.split('_')[0]].points[index] ^= 1;
+
+        this.setState({ newPointsArray });
+    }
+
     updateNewDate(id, e) {
         const tmpNewDates = this.state.newDates;
         tmpNewDates[id].date = e.target.value;
         this.setState({ newDates: { ...tmpNewDates } });
     }
 
-    prepareTable() {
-        const table1Head1 = [];
-        const table1Head2 = [];
+    startAddingNewPoints() {
+        const emptyArr = Object.keys(this.state.userPoints).map((userId, index) =>
+            ({ id: `${index}_${RandomString.generate(24)}`, userId, points: [1, 0, 0, 0] }));
 
-        console.log('aaaaaaaaaaaaaaa');
-        Object.keys(this.props.databaseObjects.users).forEach((user) => {
-            Object.keys(this.props.databaseObjects.users[user].points).forEach((date) => {
-                const tmpDate = new Date(date);
-                // const parsedDate = `${tmpDate.getMonth()+1}.${tmpDate.getDate()}`;
-                datesTmp[tmpDate] = 1;
-            });
+        this.setState({ newPointsArray: [...emptyArr], addNewDatePanelVisible: true });
+    }
+
+    handleNewPointsSave(a, newDate) {
+        const data = new FormData();
+
+        data.append('newDate', dateToISOString(newDate));
+
+        this.state.newPointsArray.forEach((row) => {
+            data.append(row.userId, row.points);
         });
 
-        console.log('aaaaaaaaaaaaaaa23434324');
-        const dates = Object.keys(datesTmp).sort((a, b) => (new Date(a)) - (new Date(b)));
-
-        // console.log(dates);
-
-        table1Head1.push(<th colSpan={2}>Gracz</th>);
-
-        dates.forEach((date) => {
-            const tmpDate = new Date(date);
-            const parsedDate = `${tmpDate.getDate()}.${`0${(tmpDate.getMonth() + 1)}`.slice(-2)}.${tmpDate.getFullYear()}`;
-            table2Head1.push(<th colSpan={4}>{parsedDate}</th>);
-        });
-
-        Object.keys(this.state.newDates).forEach((id) => {
-            table2Head1.push(<th colSpan={4}>
-                <input type="date" onChange={e => this.updateNewDate(id, e)} />
-            </th>);
-        });
-
-        table1Head2.push(<th>Imię</th>);
-        table1Head2.push(<th>Nazwisko</th>);
-
-        dates.forEach(() => {
-            table2Head2.push(<span><th className="points-first">P</th><th>Pr</th><th>S</th><th className="points-last">E</th></span>);
-            // table2Head2.push(<th>Pr</th>);
-            // table2Head2.push(<th>S</th>);
-            // table2Head2.push(<th className="points-last">E</th>);
-        });
-
-        Object.keys(this.state.newDates).forEach(() => {
-            table2Head2.push(<th className="points-first">P</th>);
-            table2Head2.push(<th>Pr</th>);
-            table2Head2.push(<th>S</th>);
-            table2Head2.push(<th className="points-last">E</th>);
-        });
-
-
-        table2Head1.push(
-            <th
-                id="table-enter-new-date"
-                colSpan={4}
-                onClick={() => {
-                    const table = document.getElementById('scrollable-table');
-                    table.scrollLeft = table.scrollWidth;
-
-                    this.setState({ newDates: {
-                        ...this.state.newDates,
-                        [Object.keys(this.state.newDates).length + 1]: {},
-                    } });
-                }}
-            >
-                <i className="fa fa-plus" />
-            </th>);
-
-        table2Head2.push(<th className="points-first">P</th>);
-        table2Head2.push(<th>Pr</th>);
-        table2Head2.push(<th>S</th>);
-        table2Head2.push(<th className="points-last">E</th>);
-
-        const table1Content = [];
-
-        const table2Content = Object.keys(this.props.databaseObjects.users).map((userId) => {
-            const user = this.props.databaseObjects.users[userId];
-            const values = [];
-
-            const values1 = [];
-
-            values1.push(<th>{user.name}</th>);
-            values1.push(<th>{user.surname}</th>);
-
-            table1Content.push(<tr>{values1}</tr>);
-
-            dates.forEach((date) => {
-                if (user.points[date] === undefined) {
-                    user.points[date] = {};
-                    user.points[date].points_punktualnosc = 0;
-                    user.points[date].points_przygotowanie = 0;
-                    user.points[date].points_skupienie = 0;
-                    user.points[date].points_efekt = 0;
-                }
-                if (this.state.changes[date] === undefined
-                    || this.state.changes[date][userId] === undefined) {
-                    values.push(
-                        <td
-                            className={'points-vals points-first'}
-                            onDoubleClick={() => this.handlePointsToggle(userId, date, 0)}
-                        >
-                            {user.points[date] === undefined
-                                ? 0 : user.points[date].points_punktualnosc}
-                        </td>);
-                    values.push(
-                        <td
-                            className={'points-vals'}
-                            onDoubleClick={() => this.handlePointsToggle(userId, date, 1)}
-                        >
-                            {user.points[date] === undefined
-                                ? 0 : user.points[date].points_przygotowanie}
-                        </td>);
-                    values.push(
-                        <td
-                            className={'points-vals'}
-                            onDoubleClick={() => this.handlePointsToggle(userId, date, 2)}
-                        >
-                            {user.points[date] === undefined
-                                ? 0 : user.points[date].points_skupienie}
-                        </td>);
-                    values.push(
-                        <td
-                            className={'points-vals points-last'}
-                            onDoubleClick={() => this.handlePointsToggle(userId, date, 3)}
-                        >
-                            {user.points[date] === undefined
-                                ? 0 : user.points[date].points_efekt}
-                        </td>);
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', '/add_points', true);
+        xhr.onload = () => {
+            console.log(xhr.responseText);
+            try {
+                const uploadResponse = JSON.parse(xhr.responseText);
+                if (uploadResponse.ok !== undefined) {
+                    this.setState({ addNewDatePanelVisible: false });
+                    this.props.databaseObjects.refreshDatabase('users');
                 } else {
-                    values.push(
-                        <td
-                            className={`points-vals points-first ${((this.state.changes[date][userId] & 1) > 0) ? 'points-changed' : ''}`}
-                            onDoubleClick={() => this.handlePointsToggle(userId, date, 0)}
-                        >
-                            {user.points[date].points_punktualnosc
-                                ^ (this.state.changes[date][userId] & 1)}
-                        </td>);
-                    values.push(
-                        <td
-                            className={`points-vals ${((this.state.changes[date][userId] & (1 << 1)) > 0) ? 'points-changed' : ''}`}
-                            onDoubleClick={() => this.handlePointsToggle(userId, date, 1)}
-                        >
-                            {user.points[date].points_przygotowanie
-                                ^ ((this.state.changes[date][userId] & (1 << 1)) >>> 1)}
-                        </td>);
-                    values.push(
-                        <td
-                            className={`points-vals ${((this.state.changes[date][userId] & (1 << 2)) > 0) ? 'points-changed' : ''}`}
-                            onDoubleClick={() => this.handlePointsToggle(userId, date, 2)}
-                        >
-                            {user.points[date].points_skupienie
-                                ^ ((this.state.changes[date][userId] & (1 << 2)) >>> 2)}
-                        </td>);
-                    values.push(
-                        <td
-                            className={`points-vals points-last ${((this.state.changes[date][userId] & (1 << 3)) > 0) ? 'points-changed' : ''}`}
-                            onDoubleClick={() => this.handlePointsToggle(userId, date, 3)}
-                        >
-                            {user.points[date].points_efekt
-                                ^ ((this.state.changes[date][userId] & (1 << 3)) >>> 3)}
-                        </td>);
+                   // add some error info
                 }
-            });
-
-            // Object.keys(this.state.newDates).forEach((id) => {
-            //     if (this.state.newDates[id][userId] === undefined) {
-            //         this.state.newDates[id][userId] = {};
-            //         this.state.newDates[id][userId].points_punktualnosc = 0;
-            //         this.state.newDates[id][userId].points_przygotowanie = 0;
-            //         this.state.newDates[id][userId].points_skupienie = 0;
-            //         this.state.newDates[id][userId].points_efekt = 0;
-            //     }
-            //     values.push(
-            //         <td
-            //             className={'points-vals points-first'}
-            //             onDoubleClick={() => this.handleNewPointsToggle(userId, id, 0)}
-            //         >
-            //             {user.points[date] === undefined
-            //                 ? 0 : user.points[date].points_punktualnosc}
-            //         </td>);
-            //     values.push(
-            //         <td
-            //             className={'points-vals'}
-            //             onDoubleClick={() => this.handlePointsToggle(userId, date, 1)}
-            //         >
-            //             {user.points[date] === undefined
-            //                 ? 0 : user.points[date].points_przygotowanie}
-            //         </td>);
-            //     values.push(
-            //         <td
-            //             className={'points-vals'}
-            //             onDoubleClick={() => this.handlePointsToggle(userId, date, 2)}
-            //         >
-            //             {user.points[date] === undefined
-            //                 ? 0 : user.points[date].points_skupienie}
-            //         </td>);
-            //     values.push(
-            //         <td
-            //             className={'points-vals points-last'}
-            //             onDoubleClick={() => this.handlePointsToggle(userId, date, 3)}
-            //         >
-            //             {user.points[date] === undefined
-            //                 ? 0 : user.points[date].points_efekt}
-            //         </td>);
-            // });
-
-            return (<tr>{values}</tr>);
-        });
-
-        this.table1 = (
-            <table className="table table-dark table-hover points-table">
-                <thead>
-                    <tr>
-                        {table1Head1}
-                    </tr>
-                    <tr>
-                        {table1Head2}
-                    </tr>
-                </thead>
-                <tbody>{table1Content}</tbody>
-            </table>
-        );
-
-        this.table2 = (
-            <table className="table table-dark table-hover">
-                <thead>
-                    <tr>
-                        {table2Head1}
-                    </tr>
-                    <tr>
-                        {table2Head2}
-                    </tr>
-                </thead>
-                <tbody>{table2Content}</tbody>
-            </table>
-        );
+            } catch (reqErr) {
+                // add some error info
+            }
+        };
+        xhr.send(data);
     }
 
     render() {
@@ -596,13 +433,16 @@ export default class AdminPoints extends Component {
                         style={{ width: `${this.state.addNewDatePanelVisible ? 250 : 0}px` }}
                     >
                         <AdminPointsMainTable
-                            dataArray={Object.keys(this.state.userPoints)}
+                            dataArray={this.state.newPointsArray}
+                            onDateDelete={() => this.setState({ addNewDatePanelVisible: false })}
+                            valuesOnEdit={this.handleNewPointsToggle}
+                            onDateChange={this.handleNewPointsSave}
                         />
                     </div>
                     <div
                         className="new-points-toggle-button"
                         style={{ width: `${this.state.addNewDatePanelVisible ? 0 : 50}px` }}
-                        onClick={() => this.setState({ addNewDatePanelVisible: true })}
+                        onClick={() => this.startAddingNewPoints()}
                     >
                         <i className="fa fa-plus" />
                     </div>

@@ -289,7 +289,7 @@ const server = http.createServer((req, res) => {
     } else if (req.method.toUpperCase() === 'POST') {
         let body = '';
 
-        if (req.url === '/upload' || req.url === '/add_user' || req.url === '/modify_points') {
+        if (req.url === '/upload' || req.url === '/add_user' || req.url === '/modify_points' || req.url === '/add_points') {
             const form = new multiparty.Form();
 
             form.on('error', (err) => {
@@ -378,8 +378,38 @@ const server = http.createServer((req, res) => {
                             res.end(JSON.stringify({ err: 'err' }));
                         }
                     });
-                } else if (req.url === '/modify_points') {
+                } else if (req.url === '/add_points') {
                     console.log(fields);
+                    databaseManager.getUserFromCookie(cookies.token, (result) => {
+                        if (result.err !== undefined || result.user === undefined || result.user.role !== 'admin') {
+                            res.writeHead(403);
+                            res.end();
+                        } else {
+                            // FIXME can crash server!
+                            const newPoints = Object.keys(fields).reduce((allPoints, pointsRow) => {
+                                if (isFinite(parseInt(pointsRow, 10))) {
+                                    return ({ ...allPoints, [pointsRow]: fields[pointsRow][0].split(',') });
+                                }
+                                return allPoints;
+                            }, {});
+
+                            if (isNaN((new Date(fields.newDate && fields.newDate[0].replace(/_/g, '-'))).valueOf())) {
+                                res.writeHead(400);
+                                res.end(JSON.stringify({ err: 'err' }));
+                            } else {
+                                databaseManager.addPoints(newPoints, fields.newDate[0],
+                                    (result2) => {
+                                        if (result2.ok === undefined) {
+                                            res.writeHead(500);
+                                            res.end(JSON.stringify({ err: 'err' }));
+                                        } else {
+                                            res.end(JSON.stringify({ ok: 'ok' }));
+                                        }
+                                    });
+                            }
+                        }
+                    });
+                } else if (req.url === '/modify_points') {
                     databaseManager.getUserFromCookie(cookies.token, (result) => {
                         if (result.err !== undefined || result.user === undefined || result.user.role !== 'admin') {
                             res.writeHead(403);
@@ -435,7 +465,7 @@ const server = http.createServer((req, res) => {
                         res.end();
                     }
                 } else {
-                    res.writeHead(400);
+                    res.writeHead(404);
                     res.end();
                 }
             });

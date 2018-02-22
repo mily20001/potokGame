@@ -346,26 +346,68 @@ export default class DatabaseManager {
         });
     }
 
-    addPoints({ userId, date, points_punktualnosc, points_przygotowanie,
-                  points_skupienie, points_efekt }, callback) {
-        const query = 'INSERT INTO Points (player_id, date, points_punktualnosc, points_przygotowanie, points_skupienie, points_efekt) VALUES ' +
-            `(${this.connection.escape(userId)}, ` +
-            `${this.connection.escape(date)}, ` +
-            `${this.connection.escape(points_punktualnosc)}, ` +
-            `${this.connection.escape(points_przygotowanie)}, ` +
-            `${this.connection.escape(points_efekt)}` +
-            `${this.connection.escape(points_skupienie)})`;
+    addPoints(newPoints, newDate, callback) {
+        try {
+            this.connection.beginTransaction((err) => {
+                if (err) {
+                    console.error(err);
+                    callback({ err });
+                    return;
+                }
 
-        this.connection.query(query, (err3, results) => {
-            if (err3) {
-                console.error(err3);
-                callback({ err: err3 });
-                return;
-            }
+                const queriesToBeDone = Object.keys(newPoints).length;
+                let queriesDone = 0;
+                let errorOccured = false;
 
-            const newPointsRowId = results.insertId;
-            callback({ newPointsRowId });
-        });
+                Object.keys(newPoints).forEach((userId) => {
+                    if (errorOccured) {
+                        return;
+                    }
+                    if (isNaN(parseInt(userId, 10))) {
+                        console.log(`Wrong user id provided: ${userId}`);
+                        errorOccured = true;
+                        callback({ err: 'err' });
+                        return;
+                    }
+                    if (!(newPoints[userId] instanceof Array) || newPoints[userId].length !== 4) {
+                        console.log(`Wrong points array provided: ${newPoints[userId]}`);
+                        errorOccured = true;
+                        callback({ err: 'err' });
+                        return;
+                    }
+
+                    const query = 'INSERT INTO Points (player_id, date, points_punktualnosc, points_przygotowanie, points_skupienie, points_efekt) VALUES (' +
+                        `${mysql.escape(userId)}, DATE_FORMAT(${mysql.escape(newDate)}, "%Y-%m-%d"),` +
+                        `${newPoints[userId].join(', ')})`;
+
+                    this.connection.query(query, (error) => {
+                        if (error) {
+                            console.error(error);
+                            errorOccured = true;
+                            this.connection.rollback();
+                            callback({ err: 'err' });
+                            return;
+                        }
+
+                        queriesDone++;
+                        if (queriesToBeDone === queriesDone) {
+                            this.connection.commit((err2) => {
+                                if (err2) {
+                                    console.error(err2);
+                                    callback({ err: 'err' });
+                                    return;
+                                }
+
+                                callback({ ok: 'ok' });
+                            });
+                        }
+                    });
+                });
+            });
+        } catch (e) {
+            console.error(e);
+            callback({ err: 'err' });
+        }
     }
 
     addPlayer({ username, password, name, surname, role, dragon_id, team_id, id }, callback) {

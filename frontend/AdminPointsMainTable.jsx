@@ -12,44 +12,34 @@ export default class AdminPointsMainTable extends Component {
     render() {
         const dataRows =
             this.props.dataArray.map((row) => {
-                if (this.props.headerDate !== undefined) {
-                    const cols = row.points.map((data, index) => {
-                        let className = '';
+                const cols = row.points.map((data, index) => {
+                    let className = '';
 
-                        const isChanged = (this.props.changesList[row.id]
+                    const isChanged = (this.props.changesList[row.id]
                             && this.props.changesList[row.id][index]) || false;
 
-                        const isOngoing = (this.props.ongoingChanges[row.id]
+                    const isOngoing = (this.props.ongoingChanges[row.id]
                             && this.props.ongoingChanges[row.id][index]) || false;
 
-                        const isSaved = (this.props.savedChanges[row.id]
+                    const isSaved = (this.props.savedChanges[row.id]
                             && this.props.savedChanges[row.id][index]) || false;
 
-                        if (isOngoing) {
-                            className = 'points-ongoing';
-                        } else if (isChanged) {
-                            className = 'points-changed';
-                        } else if (isSaved) {
-                            className = 'points-saved';
-                        }
+                    if (isOngoing) {
+                        className = 'points-ongoing';
+                    } else if (isChanged) {
+                        className = 'points-changed';
+                    } else if (isSaved) {
+                        className = 'points-saved';
+                    }
 
-                        return (<td
-                            onDoubleClick={() => this.props.valuesOnEdit(row.id, index)}
-                            className={className}
-                        >
-                            {isOngoing ? ' ' : data}
-                        </td>);
-                    });
-                    return (<tr>{cols}</tr>);
-                }
-
-                return (
-                    <tr>
-                        <td>0</td>
-                        <td>0</td>
-                        <td>0</td>
-                        <td>0</td>
-                    </tr>);
+                    return (<td
+                        onDoubleClick={() => this.props.valuesOnEdit(row.id, index)}
+                        className={className}
+                    >
+                        {isOngoing ? ' ' : data}
+                    </td>);
+                });
+                return (<tr>{cols}</tr>);
             });
 
         return (
