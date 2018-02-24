@@ -4,7 +4,6 @@ import {
     Route,
 } from 'react-router-dom';
 
-import Login from './Login';
 import AdminWelcomePage from './AdminWelcomePage';
 import AdminSidebar from './AdminSidebar';
 import AdminNavbar from './AdminNavbar';
@@ -12,6 +11,7 @@ import FileUploader from './FileUploader';
 import AdminMapManager from './AdminMapManager';
 import AdminUsers from './AdminUsers';
 import AdminPoints from './AdminPoints';
+import AdminTeams from './AdminTeams';
 
 export default class Admin extends Component {
     constructor(props) {
@@ -96,6 +96,10 @@ export default class Admin extends Component {
                         exact
                         path="/admin/points"
                         render={() => <AdminPoints databaseObjects={this.props.databaseObjects} />}
+                    />
+                    <Route
+                        path="/admin/teams"
+                        render={() => <AdminTeams databaseObjects={this.props.databaseObjects} />}
                     />
                 </div>
             </div>

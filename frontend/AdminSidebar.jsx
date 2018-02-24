@@ -13,11 +13,36 @@ export default class AdminSidebar extends Component {
         return (
             <div className="full-height admin-sidebar" style={style}>
                 <ul className="list-group">
-                    <Link to="/admin/lol" className="list-group-item bg-secondary text-white">Manage Players</Link>
-                    <Link to="/admin/map/upload" className="list-group-item bg-secondary text-white">Manage Dragons</Link>
-                    <Link to="/admin/map" className="list-group-item bg-secondary text-white">Manage Game</Link>
-                    <Link to="/admin/users" className="list-group-item bg-secondary text-white">Dodaj użytkownika</Link>
-                    <Link to="/admin/points" className="list-group-item bg-secondary text-white">Punkty</Link>
+                    <Link
+                        to="/admin/map/upload"
+                        className="list-group-item sidebar-button"
+                    >
+                        Wyślij plik mapy
+                    </Link>
+                    <Link
+                        to="/admin/map"
+                        className="list-group-item sidebar-button"
+                    >
+                        Ustaw pola na mapie
+                    </Link>
+                    <Link
+                        to="/admin/users"
+                        className="list-group-item sidebar-button"
+                    >
+                        Zarządzaj użytkownikami
+                    </Link>
+                    <Link
+                        to="/admin/teams"
+                        className="list-group-item sidebar-button"
+                    >
+                        Zarządzaj drużynami
+                    </Link>
+                    <Link
+                        to="/admin/points"
+                        className="list-group-item sidebar-button"
+                    >
+                        Zarządzaj punktami
+                    </Link>
                 </ul>
             </div>
         );

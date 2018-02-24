@@ -127,6 +127,5 @@ export default class Login extends Component {
 
 Login.propTypes = {
     setUser: PropTypes.func.isRequired,
-    currentUser: PropTypes.object.isRequired,
 };
 

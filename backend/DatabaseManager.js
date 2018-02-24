@@ -71,7 +71,11 @@ export default class DatabaseManager {
     }
 
     getTeams(callback) {
-        this.connection.query('SELECT * from Teams', (err, results) => {
+        const query = 'SELECT Teams.*, ' +
+            'CONCAT(Players.name, " ", Players.surname) AS capitan_name ' +
+            'from Teams LEFT JOIN Players ON Teams.capitan = Players.id';
+
+        this.connection.query(query, (err, results) => {
             if (err) {
                 console.error(err);
                 callback({ err });
@@ -490,6 +494,50 @@ export default class DatabaseManager {
                     callback({ ok: 'ok' });
                 });
             });
+        });
+    }
+
+    addTeam({ id, name, capitan, color }, callback) {
+        const team = { name, capitan, color };
+
+        let query;
+        if (id === undefined) {
+            query = 'INSERT INTO Teams (name, capitan, color) VALUES ' +
+                `(${this.connection.escape(name)}, ` +
+                `${this.connection.escape(capitan)}, ` +
+                `${this.connection.escape(color)})`;
+        } else {
+            query = 'UPDATE Teams SET ' +
+                `${Object.keys(team).filter(key => team[key] !== undefined).map(key => `${mysql.escapeId(key)} = ${mysql.escape(team[key])}`).join(', ')} ` +
+                `WHERE id=${mysql.escape(id)}`;
+        }
+
+        this.connection.query(query, (err3) => {
+            if (err3) {
+                console.error(err3);
+                callback({ err: err3 });
+                return;
+            }
+
+
+            callback({ ok: 'ok' });
+        });
+    }
+
+    deleteTeam(teamId, callback) {
+        this.connection.query(`DELETE FROM Teams WHERE id=${mysql.escape(teamId)}`, (err3, results3) => {
+            if (err3) {
+                console.error(err3);
+                callback({ err: err3 });
+                return;
+            }
+
+            if (results3.affectedRows !== 1) {
+                callback({ err: 'err' });
+                return;
+            }
+
+            callback({ ok: 'ok' });
         });
     }
 

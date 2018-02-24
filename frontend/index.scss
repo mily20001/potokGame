@@ -43,6 +43,16 @@ body {
   white-space: nowrap;
 }
 
+.sidebar-button {
+  background-color: #2e333a;
+  color: white;
+
+  &:hover {
+    background-color: #23242a;
+    color: white;
+  }
+}
+
 .admin-main-container {
   padding-top: $admin-navbar-height + 20;
   transition: .5s;
@@ -53,7 +63,7 @@ body {
   width: 100%;
   z-index: 2;
   position: fixed;
-  background-color: #383838;
+  background-color: #0050a8;
 }
 
 

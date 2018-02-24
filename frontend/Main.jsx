@@ -135,6 +135,9 @@ export default class Main extends Component {
         if (dataId === 'users') {
             this.getDatabaseData('/get_users', 'users');
         }
+        else if (dataId === 'teams') {
+            this.getDatabaseData('/get_teams', 'teams');
+        }
     }
 
     render() {
