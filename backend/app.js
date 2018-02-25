@@ -37,6 +37,8 @@ function parseCookies(cookieString = '') {
 const server = http.createServer((req, res) => {
     const cookies = parseCookies(req.headers.cookie);
 
+    const urlDotSplitted = req.url.toString().split('.');
+
     if (req.headers['x-forwarded-protocol'] === 'http') {
         console.log('upgrading to https');
         res.writeHead(301, { Location: `https://${req.headers.host}${req.url}` });
@@ -48,6 +50,22 @@ const server = http.createServer((req, res) => {
             if (filesMap[req.url].code === 200) {
                 res.end(fs.readFileSync(`${CONFIG.httpBasePath}${req.url}${filesMap[req.url].file}`));
             } else if (filesMap[req.url].code === 301) {
+                res.end();
+            }
+        } else if (urlDotSplitted.length > 2
+            && filesMap[urlDotSplitted
+                .filter((a, i) => i !== (urlDotSplitted.length - 2))
+                .join('.')] !== undefined
+        ) {
+            const file = filesMap[urlDotSplitted
+                .filter((a, i) => i !== (urlDotSplitted.length - 2))
+                .join('.')];
+
+            res.writeHead(file.code, file.headers);
+
+            if (file.code === 200) {
+                res.end(fs.readFileSync(`${CONFIG.httpBasePath}${req.url}${file.file}`));
+            } else if (file.code === 301) {
                 res.end();
             }
         } else if (req.url === '/get_user') {

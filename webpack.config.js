@@ -1,5 +1,7 @@
 const path = require("path");
 const ExtractTextPlugin = require('extract-text-webpack-plugin');
+const WebpackSHAHash = require('webpack-sha-hash');
+const HtmlWebpackPlugin = require('html-webpack-plugin');
 
 const buildPath = "build/frontend";
 
@@ -7,7 +9,7 @@ module.exports = {
     entry: ["./frontend/index.js"],
     output: {
         path: path.resolve(__dirname, buildPath),
-        filename: "js/[name].js",
+        filename: "js/[name].[chunkhash].js",
         // publicPath: "frontend/public/",
     },
     module: {
@@ -47,8 +49,13 @@ module.exports = {
     },
     plugins: [
         new ExtractTextPlugin({ // define where to save the file
-            filename: `css/[name].bundle.css`,
+            filename: `css/[name].bundle.[chunkhash].css`,
             allChunks: true,
+        }),
+        new WebpackSHAHash(),
+        new HtmlWebpackPlugin({
+            title: 'Ładowanie',
+            template: 'frontend/index.template.html'
         }),
     ],
 };
