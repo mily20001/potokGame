@@ -232,6 +232,26 @@ const server = http.createServer((req, res) => {
                     });
                 }
             });
+        } else if (req.url.substr(0, '/delete_region'.length) === '/delete_region') {
+            databaseManager.getUserFromCookie(cookies.token, (result) => {
+                if (result.err !== undefined || result.user === undefined || result.user.role !== 'admin') {
+                    res.writeHead(403);
+                    res.end();
+                } else if (req.url.split('?')[1] === undefined || req.url.split('?')[1].split('=')[1] === undefined) {
+                    res.writeHead(400);
+                    res.end();
+                } else {
+                    const regionId = req.url.split('?')[1].split('=')[1];
+                    databaseManager.deleteRegion(regionId, (result2) => {
+                        if (result2.ok !== undefined) {
+                            res.end(JSON.stringify({ ok: 'ok' }));
+                        } else {
+                            res.writeHead(500);
+                            res.end();
+                        }
+                    });
+                }
+            });
         /**
          * date has to be in format YYYY_MM_DD
          */
@@ -327,7 +347,9 @@ const server = http.createServer((req, res) => {
     } else if (req.method.toUpperCase() === 'POST') {
         let body = '';
 
-        if (req.url === '/upload' || req.url === '/add_user' || req.url === '/modify_points' || req.url === '/add_points' || req.url === '/add_team') {
+        if (req.url === '/upload' || req.url === '/add_user' || req.url === '/modify_points'
+            || req.url === '/add_points' || req.url === '/add_team' || req.url === '/add_region'
+        ) {
             const form = new multiparty.Form();
 
             form.on('error', (err) => {
@@ -425,16 +447,44 @@ const server = http.createServer((req, res) => {
                             res.end();
                         } else if (
                             // TODO maybe not all fields are required
-                            (fields.id !== undefined && fields.id[0] !== undefined)
-                            || (fields.name !== undefined && fields.name[0] !== undefined
-                                && fields.capitan !== undefined && fields.capitan[0] !== undefined
-                                && fields.color !== undefined && fields.color[0] !== undefined
-                            )) {
+                        (fields.id !== undefined && fields.id[0] !== undefined)
+                        || (fields.name !== undefined && fields.name[0] !== undefined
+                            && fields.capitan !== undefined && fields.capitan[0] !== undefined
+                            && fields.color !== undefined && fields.color[0] !== undefined
+                        )) {
                             const newTeam = {};
                             Object.keys(fields).forEach((name) => {
                                 newTeam[name] = fields[name][0];
                             });
                             databaseManager.addTeam(newTeam, (result2) => {
+                                if (result2.ok !== undefined) {
+                                    res.end(JSON.stringify({ ok: 'ok' }));
+                                } else {
+                                    res.writeHead(500);
+                                    res.end(JSON.stringify({ err: 'err' }));
+                                }
+                            });
+                        } else {
+                            res.writeHead(400);
+                            res.end(JSON.stringify({ err: 'err' }));
+                        }
+                    });
+                } else if (req.url === '/add_region') {
+                    console.log(fields);
+                    databaseManager.getUserFromCookie(cookies.token, (result) => {
+                        if (result.err !== undefined || result.user === undefined || result.user.role !== 'admin') {
+                            res.writeHead(403);
+                            res.end();
+                        } else if (
+                        (fields.id !== undefined && fields.id[0] !== undefined)
+                        || (fields.name !== undefined && fields.name[0] !== undefined
+                            && fields.distance !== undefined && fields.distance[0] !== undefined
+                        )) {
+                            const newRegion = {};
+                            Object.keys(fields).forEach((name) => {
+                                newRegion[name] = fields[name][0];
+                            });
+                            databaseManager.addRegion(newRegion, (result2) => {
                                 if (result2.ok !== undefined) {
                                     res.end(JSON.stringify({ ok: 'ok' }));
                                 } else {

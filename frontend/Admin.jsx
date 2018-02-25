@@ -12,6 +12,7 @@ import AdminMapManager from './AdminMapManager';
 import AdminUsers from './AdminUsers';
 import AdminPoints from './AdminPoints';
 import AdminTeams from './AdminTeams';
+import AdminRegions from './AdminRegions';
 
 export default class Admin extends Component {
     constructor(props) {
@@ -100,6 +101,10 @@ export default class Admin extends Component {
                     <Route
                         path="/admin/teams"
                         render={() => <AdminTeams databaseObjects={this.props.databaseObjects} />}
+                    />
+                    <Route
+                        path="/admin/regions"
+                        render={() => <AdminRegions databaseObjects={this.props.databaseObjects} />}
                     />
                 </div>
             </div>

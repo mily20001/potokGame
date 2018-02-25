@@ -130,6 +130,44 @@ export default class DatabaseManager {
         });
     }
 
+    propagateFields() {
+        this.connection.query('SELECT id from Teams', (err, results) => {
+            if (err) {
+                console.error(err);
+                return;
+            }
+
+            const teams = results.map(team => team.id);
+
+            teams.forEach((teamId) => {
+                const query = 'SELECT DISTINCT id FROM Regions WHERE (id) NOT IN ' +
+                    `(SELECT DISTINCT region_id FROM Fields WHERE team_id = ${mysql.escape(teamId)})`;
+
+                this.connection.query(query, (err2, results2) => {
+                    if (err2) {
+                        console.error(err2);
+                        return;
+                    }
+
+                    if (results2.length > 0) {
+                        const insertQuery = 'INSERT INTO Fields (region_id, team_id) VALUES ' +
+                            `${results2.map(row =>
+                                `(${mysql.escape(row.id)}, ${mysql.escape(teamId)})`)
+                                .join(', ')}`;
+
+                        console.log(`Inserting ${results2.length} missing fields`);
+
+                        this.connection.query(insertQuery, (err3) => {
+                            if (err3) {
+                                console.error(err3);
+                            }
+                        });
+                    }
+                });
+            });
+        });
+    }
+
     changePoints(changes, callback) {
         try {
             this.connection.beginTransaction((err) => {
@@ -519,13 +557,57 @@ export default class DatabaseManager {
                 return;
             }
 
-
+            this.propagateFields();
             callback({ ok: 'ok' });
         });
     }
 
     deleteTeam(teamId, callback) {
         this.connection.query(`DELETE FROM Teams WHERE id=${mysql.escape(teamId)}`, (err3, results3) => {
+            if (err3) {
+                console.error(err3);
+                callback({ err: err3 });
+                return;
+            }
+
+            if (results3.affectedRows !== 1) {
+                callback({ err: 'err' });
+                return;
+            }
+
+            callback({ ok: 'ok' });
+        });
+    }
+
+    addRegion({ id, name, distance }, callback) {
+        const region = { name, distance };
+
+        let query;
+        if (id === undefined) {
+            query = 'INSERT INTO Regions (name, distance) VALUES ' +
+                `(${this.connection.escape(name)}, ` +
+                `${this.connection.escape(distance)})`;
+        } else {
+            query = 'UPDATE Regions SET ' +
+                `${Object.keys(region).filter(key => region[key] !== undefined).map(key =>
+                    `${mysql.escapeId(key)} = ${mysql.escape(region[key])}`).join(', ')} ` +
+                    `WHERE id=${mysql.escape(id)}`;
+        }
+
+        this.connection.query(query, (err3) => {
+            if (err3) {
+                console.error(err3);
+                callback({ err: err3 });
+                return;
+            }
+
+            this.propagateFields();
+            callback({ ok: 'ok' });
+        });
+    }
+
+    deleteRegion(regionId, callback) {
+        this.connection.query(`DELETE FROM Regions WHERE id=${mysql.escape(regionId)}`, (err3, results3) => {
             if (err3) {
                 console.error(err3);
                 callback({ err: err3 });

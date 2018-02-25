@@ -134,9 +134,12 @@ export default class Main extends Component {
     refreshDatabase(dataId) {
         if (dataId === 'users') {
             this.getDatabaseData('/get_users', 'users');
-        }
-        else if (dataId === 'teams') {
+        } else if (dataId === 'teams') {
             this.getDatabaseData('/get_teams', 'teams');
+        } else if (dataId === 'regions') {
+            this.getDatabaseData('/get_regions', 'regions');
+        } else if (dataId === 'fields') {
+            this.getDatabaseData('/get_fields', 'fields');
         }
     }
 

@@ -43,6 +43,12 @@ export default class AdminSidebar extends Component {
                     >
                         Zarządzaj punktami
                     </Link>
+                    <Link
+                        to="/admin/regions"
+                        className="list-group-item sidebar-button"
+                    >
+                        Zarządzaj regionami
+                    </Link>
                 </ul>
             </div>
         );
