@@ -707,8 +707,12 @@ export default class DatabaseManager {
             });
     }
 
-    uploadImage(image, type, filename, callback) {
-        this.connection.query(`INSERT INTO Images (data, type, filename) VALUES (${mysql.escape(image)}, ${mysql.escape(type)}, ${mysql.escape(filename)})`, (err, results) => {
+    uploadImage(image, type, filename, dataType, callback) {
+        const query = 'INSERT INTO Images (data, type, filename, data_type) VALUES' +
+            `(${mysql.escape(image)}, ${mysql.escape(type)}, ` +
+            `${mysql.escape(filename)}, ${mysql.escape(dataType)})`;
+
+        this.connection.query(query, (err, results) => {
             if (err) {
                 console.error(err);
                 callback({ err });
@@ -716,6 +720,12 @@ export default class DatabaseManager {
             }
 
             const newImageId = results.insertId;
+
+            if (type !== 'map') {
+                console.log(`Added new image with id: ${newImageId}`);
+                callback({ id: newImageId });
+                return;
+            }
 
             this.connection.query(`DELETE FROM Images WHERE type='map' AND id <> ${newImageId}`, (err2) => {
                 if (err2) {

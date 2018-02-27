@@ -16,9 +16,21 @@ export default class FileUploader extends Component {
             uploadStatus: -1,
         };
 
+        this.imageTypes = ['map', 'dragon'];
+
+        this.fixedImageType = this.imageTypes.includes(this.props.imageType);
+
+        this.state.imageType = this.fixedImageType ? this.props.imageType : this.imageTypes[0];
+
         this.handleField = this.handleField.bind(this);
         this.handleSubmit = this.handleSubmit.bind(this);
         this.handleThumbnailLoad = this.handleThumbnailLoad.bind(this);
+    }
+
+    componentWillReceiveProps(nextProps) {
+        this.fixedImageType = this.imageTypes.includes(nextProps.imageType);
+
+        this.state.imageType = this.fixedImageType ? nextProps.imageType : this.imageTypes[0];
     }
 
     handleThumbnailLoad(e) {
@@ -57,8 +69,11 @@ export default class FileUploader extends Component {
         } else {
             data.append('filename', this.state.filename);
         }
-        data.append('imageType', this.props.imageType);
+        data.append('imageType', this.state.imageType);
 
+        // FIXME będzie się psuło jeśli będzie wysyłane coś innego niż obrazek
+
+        data.append('dataType', this.state.blob.split(';')[0]);
 
         const xhr = new XMLHttpRequest();
         xhr.open('POST', '/upload', true);
@@ -77,6 +92,14 @@ export default class FileUploader extends Component {
     }
 
     render() {
+        const imageTypeOptions = this.imageTypes.map(imageType => (
+            <option
+                value={imageType}
+            >
+                {imageType}
+            </option>
+        ));
+
         return (
             <div className="container bg-dark text-light file-upload-container">
                 <h2 className="text-center">{this.props.messageText}</h2><br />
@@ -124,6 +147,24 @@ export default class FileUploader extends Component {
                         </div>
                     }
 
+                    { !this.fixedImageType &&
+                    <div className="form-group row">
+                        <label className="control-label col-sm-2" htmlFor="imageType">
+                            Typ pliku
+                        </label>
+                        <div className="col-sm-10">
+                            <select
+                                className="form-control bg-dark text-white"
+                                id="imageTypeFormField"
+                                onChange={e => this.handleField('imageType', e)}
+                                value={this.state.imageType}
+                            >
+                                {imageTypeOptions}
+                            </select>
+                        </div>
+                    </div>
+                    }
+
                     <div
                         style={{
                             height: this.state.thumbnailReady ? `${this.state.imageHeight}px` : 0,
@@ -160,7 +201,7 @@ export default class FileUploader extends Component {
 }
 
 FileUploader.propTypes = {
-    imageType: PropTypes.string.isRequired,
+    imageType: PropTypes.string,
     messageText: PropTypes.string,
     customFileName: PropTypes.bool,
 };
@@ -168,4 +209,5 @@ FileUploader.propTypes = {
 FileUploader.defaultProps = {
     messageText: 'Wyślij plik',
     customFileName: false,
+    imageType: '',
 };

@@ -82,7 +82,7 @@ export default class Admin extends Component {
                     <Route exact path="/admin" component={AdminWelcomePage} />
                     <Route
                         path="/admin/map/upload"
-                        render={() => <FileUploader messageText={'Wyślij plik mapy'} imageType={'map'} />}
+                        render={() => <FileUploader customFileName />}
                     />
                     <Route
                         exact

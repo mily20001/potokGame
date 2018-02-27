@@ -17,7 +17,7 @@ export default class AdminSidebar extends Component {
                         to="/admin/map/upload"
                         className="list-group-item sidebar-button"
                     >
-                        Wyślij plik mapy
+                        Wyślij plik
                     </Link>
                     <Link
                         to="/admin/map"

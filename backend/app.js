@@ -385,10 +385,12 @@ const server = http.createServer((req, res) => {
                         } else if (fields.filename !== undefined
                             && fields.imageType !== undefined
                             && files.image !== undefined
+                            && fields.dataType !== undefined
+                            && ['map', 'dragon'].includes(fields.imageType[0])
                         ) {
                             const image = fs.readFileSync(files.image[0].path);
-                            databaseManager.uploadImage(image, fields.imageType, fields.filename,
-                                (result2) => {
+                            databaseManager.uploadImage(image, fields.imageType,
+                                fields.filename, fields.dataType, (result2) => {
                                     if (result2.err === undefined && result2.id !== undefined) {
                                         res.writeHead(200);
                                         res.end(JSON.stringify({ ok: 'ok' }));
