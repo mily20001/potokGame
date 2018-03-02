@@ -49,6 +49,12 @@ export default class AdminSidebar extends Component {
                     >
                         Zarządzaj regionami
                     </Link>
+                    <Link
+                        to="/admin/dragons"
+                        className="list-group-item sidebar-button"
+                    >
+                        Zarządzaj smokami
+                    </Link>
                 </ul>
             </div>
         );

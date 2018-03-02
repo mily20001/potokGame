@@ -355,7 +355,7 @@ export default class DatabaseManager {
     }
 
     getImageList(callback) {
-        this.connection.query('SELECT id, type, filename from Images', (err, results) => {
+        this.connection.query('SELECT id, type, filename, data_type as dataType from Images', (err, results) => {
             if (err) {
                 console.error(err);
                 callback({ err });
@@ -384,7 +384,7 @@ export default class DatabaseManager {
             }
 
             // console.log(teams);
-            callback({ data: results[0].data });
+            callback({ data: results[0].data, dataType: results[0].data_type });
         });
     }
 
@@ -616,6 +616,21 @@ export default class DatabaseManager {
 
             if (results3.affectedRows !== 1) {
                 callback({ err: 'err' });
+                return;
+            }
+
+            callback({ ok: 'ok' });
+        });
+    }
+
+    changeDragonImage(dragonId, newImageId, callback) {
+        const query = `UPDATE Dragons SET image = ${mysql.escape(newImageId)} ` +
+            `WHERE id = ${mysql.escape(dragonId)}`;
+
+        this.connection.query(query, (err) => {
+            if (err) {
+                console.error(err);
+                callback({ err });
                 return;
             }
 

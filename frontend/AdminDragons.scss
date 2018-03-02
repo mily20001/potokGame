@@ -1,0 +1,179 @@
+.dragon-table th {
+  border-right: 3px solid #3d4349;
+  vertical-align: middle;
+}
+
+.dragon-table tr:nth-child(2) {
+  border-bottom: 3px solid #3d4349;
+}
+
+.dragon-table td {
+  text-align: center;
+  vertical-align: middle;
+}
+
+.dragon-table td:not(:last-child) {
+  border-right-width: 1px;
+  border-right-style: solid;
+}
+
+//.dragon-image-preview img {
+//  max-width: 50px;
+//  max-height: 70px;
+//  margin-right: 15px;
+//}
+
+.dragon-image-preview {
+  //border-bottom: 1px solid blue;
+  //padding-bottom: 2px;
+  //padding-top: 2px;
+  color: white;
+}
+
+
+.dragon.dropbtn {
+  background-color: #4CAF50;
+  color: white;
+  padding: 10px;
+  font-size: 16px;
+  border: none;
+  cursor: pointer;
+  margin-top: 5px;
+  display: inline-block;
+}
+
+.dragon.dropdown {
+  position: relative;
+  display: inline-block;
+  text-align: center;
+  width: 100%;
+}
+
+.dragon.dropdown-content {
+  text-align: left;
+  display: none;
+  position: absolute;
+  background-color: #2d3338;
+  min-width: 160px;
+  box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+  z-index: 1;
+  max-height: 250px;
+  overflow-y: scroll;
+}
+
+.dragon.dropdown-content img {
+  max-width: 50px;
+  max-height: 70px;
+  margin-right: 15px;
+}
+
+.dragon.dropdown-content.image-loader-anim {
+  padding: 12px 16px;
+  text-decoration: none;
+  display: block;
+}
+
+.dragon.dropdown-content div:hover {
+  background-color: #21262a;
+}
+
+.dragon.dropdown:hover .dragon.dropdown-content {
+  display: block;
+}
+
+.dragon.dropdown:hover .dragon.dropbtn {
+  background-color: #3e8e41;
+}
+
+.dragon-dropdown-element {
+  width: 250px;
+  height: 70px;
+}
+
+.dragon-image {
+  display: inline-block;
+}
+
+.dragon-preview img {
+  max-width: 250px;
+  max-height: 300px;
+}
+
+.dragon-preview {
+  text-align: center;
+}
+
+.dragon-preview-container {
+  padding-right: 10px;
+}
+
+.dragon-preview-and-details {
+  display: flex;
+  align-items: center;
+  margin-bottom: 25px;
+}
+
+.dragon-details {
+  flex-grow: 1;
+}
+
+.dragon-details table{
+  height: 100%;
+
+}
+
+/******* image loading anim (from http://tobiasahlin.com/spinkit/) ********/
+
+.image-loader-anim {
+  margin: 5px auto;
+  width: 50px;
+  height: 40px;
+  text-align: center;
+  font-size: 10px;
+}
+
+.image-loader-anim > div {
+  background-color: #d6d6d6;
+  height: 100%;
+  width: 6px;
+  display: inline-block;
+
+  -webkit-animation: sk-stretchdelay 1.2s infinite ease-in-out;
+  animation: sk-stretchdelay 1.2s infinite ease-in-out;
+}
+
+.image-loader-anim .rect2 {
+  -webkit-animation-delay: -1.1s;
+  animation-delay: -1.1s;
+}
+
+.image-loader-anim .rect3 {
+  -webkit-animation-delay: -1.0s;
+  animation-delay: -1.0s;
+}
+
+.image-loader-anim .rect4 {
+  -webkit-animation-delay: -0.9s;
+  animation-delay: -0.9s;
+}
+
+.image-loader-anim .rect5 {
+  -webkit-animation-delay: -0.8s;
+  animation-delay: -0.8s;
+}
+
+@-webkit-keyframes sk-stretchdelay {
+  0%, 40%, 100% { -webkit-transform: scaleY(0.4) }
+  20% { -webkit-transform: scaleY(1.0) }
+}
+
+@keyframes sk-stretchdelay {
+  0%, 40%, 100% {
+    transform: scaleY(0.4);
+    -webkit-transform: scaleY(0.4);
+  }  20% {
+       transform: scaleY(1.0);
+       -webkit-transform: scaleY(1.0);
+     }
+}
+/****************************************************/

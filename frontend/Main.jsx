@@ -79,17 +79,26 @@ export default class Main extends Component {
 
     // TODO maybe switch to browser storage
     getImage(imageId, callback) {
-        console.log('getting image');
         if (this.imageCache[imageId] !== undefined) {
-            callback(this.imageCache[imageId].data);
+            if(this.imageCache[imageId].status === 'loading') {
+                // TODO maybe add some callback queue instead
+                setTimeout(this.getImage, 50, imageId, callback);
+                return;
+            }
+
+            callback(
+                this.imageCache[imageId].data,
+                this.state.databaseObjects.images[imageId].dataType,
+            );
         } else {
+            this.imageCache[imageId] = {status: 'loading'};
             const xhr = new XMLHttpRequest();
             xhr.open('GET', `/get_image?id=${imageId}`, true);
             xhr.onload = () => {
                 const result = JSON.parse(xhr.responseText);
                 if (result.data !== undefined) {
-                    this.imageCache[result.id] = { data: result.data };
-                    callback(result.data);
+                    this.imageCache[result.id] = { data: result.data, status: 'ready'};
+                    callback(result.data, result.dataType);
                 } else {
                     console.log(`error while getting image ${imageId}`);
                 }
@@ -140,6 +149,8 @@ export default class Main extends Component {
             this.getDatabaseData('/get_regions', 'regions');
         } else if (dataId === 'fields') {
             this.getDatabaseData('/get_fields', 'fields');
+        } else if (dataId === 'dragons') {
+            this.getDatabaseData('/get_dragons', 'dragons');
         }
     }
 

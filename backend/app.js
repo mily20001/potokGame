@@ -184,7 +184,11 @@ const server = http.createServer((req, res) => {
                     const imageId = req.url.split('?')[1].split('=')[1];
                     databaseManager.getImage(imageId, (result2) => {
                         if (result2.data !== undefined) {
-                            res.end(JSON.stringify({ id: imageId, data: result2.data }));
+                            res.end(JSON.stringify({
+                                id: imageId,
+                                data: result2.data,
+                                dataType: result2.dataType,
+                            }));
                         } else {
                             res.writeHead(500);
                             res.end();
@@ -333,6 +337,46 @@ const server = http.createServer((req, res) => {
                                 res.end();
                             }
                         });
+                    }
+                }
+            });
+        } else if (req.url.substr(0, '/change_dragon_image'.length) === '/change_dragon_image') {
+            databaseManager.getUserFromCookie(cookies.token, (result) => {
+                if (result.err !== undefined || result.user === undefined || result.user.role !== 'admin') {
+                    res.writeHead(403);
+                    res.end();
+                } else if (req.url.split('?')[1] === undefined) {
+                    res.writeHead(400);
+                    res.end();
+                } else if (req.url.split('?')[1].split('&').length !== 2) {
+                    res.writeHead(400);
+                    res.end();
+                } else {
+                    let paramsOk = true;
+                    const reqParams = req.url.split('?')[1].split('&').reduce((allParams, param) => {
+                        if (param.split('=').length !== 2) {
+                            paramsOk = false;
+                        }
+                        return { ...allParams, [param.split('=')[0]]: param.split('=')[1] };
+                    }, {});
+
+                    if (!(reqParams.dragonId && reqParams.imageId)) {
+                        paramsOk = false;
+                    }
+
+                    if (!paramsOk) {
+                        res.writeHead(400);
+                        res.end();
+                    } else {
+                        databaseManager.changeDragonImage(reqParams.dragonId, reqParams.imageId,
+                            (result2) => {
+                                if (result2.ok !== undefined) {
+                                    res.end(JSON.stringify({ ok: 'ok' }));
+                                } else {
+                                    res.writeHead(500);
+                                    res.end();
+                                }
+                            });
                     }
                 }
             });
