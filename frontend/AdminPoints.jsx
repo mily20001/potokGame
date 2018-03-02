@@ -324,7 +324,7 @@ export default class AdminPoints extends Component {
 
     startAddingNewPoints() {
         const emptyArr = Object.keys(this.state.userPoints).map((userId, index) =>
-            ({ id: `${index}_${RandomString.generate(24)}`, userId, points: [1, 0, 0, 0] }));
+            ({ id: `${index}_${RandomString.generate(24)}`, userId, points: [0, 0, 0, 0] }));
 
         this.setState({ newPointsArray: [...emptyArr], addNewDatePanelVisible: true });
     }

@@ -14,8 +14,8 @@ import LoadingScreen from './LoadingScreen';
 import Page404 from './Page404';
 
 export default class Main extends Component {
-    constructor(props) {
-        super(props);
+    constructor() {
+        super();
         this.state = {
             user: {},
             databaseObjects: {

@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import {
     Route,
+    Switch,
 } from 'react-router-dom';
 
 import AdminWelcomePage from './AdminWelcomePage';
@@ -14,10 +15,11 @@ import AdminPoints from './AdminPoints';
 import AdminTeams from './AdminTeams';
 import AdminRegions from './AdminRegions';
 import AdminDragons from './AdminDragons';
+import Page404 from './Page404';
 
 export default class Admin extends Component {
-    constructor(props) {
-        super(props);
+    constructor() {
+        super();
         this.state = {
             sidebarHidden: false,
             sidebarManualToggled: false,
@@ -80,37 +82,50 @@ export default class Admin extends Component {
                     />
                 </div>
                 <div style={mainStyle} className="admin-main-container">
-                    <Route exact path="/admin" component={AdminWelcomePage} />
-                    <Route
-                        path="/admin/map/upload"
-                        render={() => <FileUploader customFileName />}
-                    />
-                    <Route
-                        exact
-                        path="/admin/map"
-                        component={AdminMapManager}
-                    />
-                    <Route
-                        path="/admin/users"
-                        render={() => <AdminUsers databaseObjects={this.props.databaseObjects} />}
-                    />
-                    <Route
-                        exact
-                        path="/admin/points"
-                        render={() => <AdminPoints databaseObjects={this.props.databaseObjects} />}
-                    />
-                    <Route
-                        path="/admin/teams"
-                        render={() => <AdminTeams databaseObjects={this.props.databaseObjects} />}
-                    />
-                    <Route
-                        path="/admin/regions"
-                        render={() => <AdminRegions databaseObjects={this.props.databaseObjects} />}
-                    />
-                    <Route
-                        path="/admin/dragons"
-                        render={() => <AdminDragons databaseObjects={this.props.databaseObjects} />}
-                    />
+                    <Switch>
+                        <Route exact path="/admin" component={AdminWelcomePage} />
+                        <Route
+                            path="/admin/map/upload"
+                            render={() => <FileUploader customFileName />}
+                        />
+                        <Route
+                            exact
+                            path="/admin/map"
+                            component={AdminMapManager}
+                        />
+                        <Route
+                            path="/admin/users"
+                            render={() =>
+                                <AdminUsers databaseObjects={this.props.databaseObjects} />
+                            }
+                        />
+                        <Route
+                            exact
+                            path="/admin/points"
+                            render={() =>
+                                <AdminPoints databaseObjects={this.props.databaseObjects} />
+                            }
+                        />
+                        <Route
+                            path="/admin/teams"
+                            render={() =>
+                                <AdminTeams databaseObjects={this.props.databaseObjects} />
+                            }
+                        />
+                        <Route
+                            path="/admin/regions"
+                            render={() =>
+                                <AdminRegions databaseObjects={this.props.databaseObjects} />
+                            }
+                        />
+                        <Route
+                            path="/admin/dragons"
+                            render={() =>
+                                <AdminDragons databaseObjects={this.props.databaseObjects} />
+                            }
+                        />
+                        <Route component={Page404} />
+                    </Switch>
                 </div>
             </div>
         );

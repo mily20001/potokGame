@@ -32,6 +32,7 @@ export default function AdminDragonPreview(props) {
                 <AdminDragonImage
                     imageId={imageId === null ? undefined : imageId}
                     getImage={props.databaseObjects.getImage}
+                    // forceLoad={props.isBeingUpdated}
                 />
             </div>
             <div className="dragon dropdown">
@@ -48,8 +49,10 @@ AdminDragonPreview.propTypes = {
     databaseObjects: PropTypes.object.isRequired,
     dragonId: PropTypes.number.isRequired,
     changeImage: PropTypes.func,
+    isBeingUpdated: PropTypes.bool,
 };
 
 AdminDragonPreview.defaultProps = {
     changeImage: () => {},
+    isBeingUpdated: false,
 };

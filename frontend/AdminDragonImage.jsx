@@ -49,7 +49,7 @@ export default class AdminDragonImage extends Component {
             );
         }
 
-        if (this.state.status === 'loading') {
+        if (this.state.status === 'loading' || this.props.forceLoad) {
             return (
                 <div className="image-loader-anim dragon-image">
                     <div className="rect1" />
@@ -72,8 +72,10 @@ export default class AdminDragonImage extends Component {
 AdminDragonImage.propTypes = {
     imageId: PropTypes.number,
     getImage: PropTypes.func.isRequired,
+    forceLoad: PropTypes.bool,
 };
 
 AdminDragonImage.defaultProps = {
     imageId: undefined,
+    forceLoad: false,
 };

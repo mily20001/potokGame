@@ -19,6 +19,8 @@ export default class AdminDragonDetails extends Component {
             defence: [<th>Obrona</th>],
             range: [<th>Zasięg</th>],
             hp: [<th>Życie</th>],
+            edit: [<th>Edytuj</th>],
+            remove: [<th>Usuń</th>],
         };
 
         const dragon = this.props.dragon;
@@ -29,6 +31,16 @@ export default class AdminDragonDetails extends Component {
             Object.keys(level).forEach((key) => {
                 levelTableRow[key].push(<td>{level[key]}</td>);
             });
+            levelTableRow.edit.push(
+                <td>
+                    <i className="fa fa-edit" />
+                </td>,
+            );
+            levelTableRow.remove.push(
+                <td>
+                    <i className="fa fa-trash" />
+                </td>,
+            );
         });
 
         return (
@@ -38,6 +50,9 @@ export default class AdminDragonDetails extends Component {
                         {Object.keys(levelTableRow).map(rowId => <tr>{levelTableRow[rowId]}</tr>)}
                     </tbody>
                 </table>
+                <div className="dragon-details-new-level">
+                    <i className="fa fa-plus" />
+                </div>
             </div>
         );
     }

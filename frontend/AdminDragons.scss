@@ -115,11 +115,32 @@
 
 .dragon-details {
   flex-grow: 1;
+  display: flex;
 }
 
-.dragon-details table{
+.dragon-details table {
   height: 100%;
+  flex-grow: 1;
+  margin-bottom: 0;
+}
 
+.dragon-details-new-level {
+  //height: 100%;
+  width: 50px;
+  background-color: #212529;
+  cursor: pointer;
+  text-align: center;
+  border-left: 2px solid #3d4349;
+
+  &:hover {
+    background-color: rgba(255,255,255,.075);
+  }
+}
+
+.dragon-details-new-level i {
+  position: relative;
+  top: 50%;
+  transform: translateY(-50%);
 }
 
 /******* image loading anim (from http://tobiasahlin.com/spinkit/) ********/

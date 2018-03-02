@@ -11,6 +11,7 @@ export default class AdminDragons extends Component {
         super();
         this.state = {
             newDragon: {},
+            imagesOnUpdate: [],
         };
 
         this.changeDragonImage = this.changeDragonImage.bind(this);
@@ -18,6 +19,8 @@ export default class AdminDragons extends Component {
 
     changeDragonImage(dragonId, newImageId) {
         const reqString = `/change_dragon_image?dragonId=${dragonId}&imageId=${newImageId}`;
+
+        this.setState({ imagesOnUpdate: [...this.state.imagesOnUpdate, dragonId] });
 
         const xhr = new XMLHttpRequest();
         xhr.open('GET', reqString, true);
@@ -27,12 +30,20 @@ export default class AdminDragons extends Component {
                 const uploadResponse = JSON.parse(xhr.responseText);
                 if (uploadResponse.ok !== undefined) {
                     this.props.databaseObjects.refreshDatabase('dragons');
+                    const imagesOnUpdate
+                        = this.state.imagesOnUpdate.filter(val => val !== dragonId);
+                    this.setState({ imagesOnUpdate });
                 } else {
                     // TODO print some error
                     /**/
+                    const imagesOnUpdate
+                        = this.state.imagesOnUpdate.filter(val => val !== dragonId);
+                    this.setState({ imagesOnUpdate });
                 }
             } catch (reqErr) {
                 /**/
+                const imagesOnUpdate = this.state.imagesOnUpdate.filter(val => val !== dragonId);
+                this.setState({ imagesOnUpdate });
             }
         };
         xhr.send();
@@ -47,6 +58,7 @@ export default class AdminDragons extends Component {
                         dragonId={id}
                         databaseObjects={this.props.databaseObjects}
                         changeImage={newImageId => this.changeDragonImage(id, newImageId)}
+                        isBeingUpdated={this.state.imagesOnUpdate.includes(id)}
                     />
                     <AdminDragonDetails dragon={this.props.databaseObjects.dragons[id]} />
                 </div>
