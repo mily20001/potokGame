@@ -60,7 +60,10 @@ export default class AdminDragons extends Component {
                         changeImage={newImageId => this.changeDragonImage(id, newImageId)}
                         isBeingUpdated={this.state.imagesOnUpdate.includes(id)}
                     />
-                    <AdminDragonDetails dragon={this.props.databaseObjects.dragons[id]} />
+                    <AdminDragonDetails
+                        dragon={this.props.databaseObjects.dragons[id]}
+                        refreshDatabase={this.props.databaseObjects.refreshDatabase}
+                    />
                 </div>
             </div>
         ));

@@ -51,7 +51,8 @@ export default class DatabaseManager {
                     dragons[key].levels = {};
 
                     results2.forEach((level) => {
-                        dragons[key].levels[level.level] = {
+                        dragons[key].levels[level.id] = {
+                            level: level.level,
                             xp: level.xp,
                             strength: level.strength,
                             defence: level.defence,
@@ -631,6 +632,57 @@ export default class DatabaseManager {
             if (err) {
                 console.error(err);
                 callback({ err });
+                return;
+            }
+
+            callback({ ok: 'ok' });
+        });
+    }
+
+    addLevel({ id, xp, strength, defence, range, hp, dragonId, level }, callback) {
+        const levelObj = { xp, strength, defence, range, hp, dragon_id: dragonId, level };
+
+        let query;
+        if (id === undefined) {
+            const fields = Object.keys(levelObj)
+                .filter(key => levelObj[key] !== undefined)
+                .map(key => (mysql.escapeId(key)))
+                .join(', ');
+
+            const values = Object.keys(levelObj)
+                .filter(key => levelObj[key] !== undefined)
+                .map(key => (mysql.escape(levelObj[key])))
+                .join(', ');
+
+            query = `INSERT INTO Dragons_leveling (${fields}) VALUES (${values})`;
+        } else {
+            query = 'UPDATE Dragons_leveling SET ' +
+                `${Object.keys(levelObj).filter(key => levelObj[key] !== undefined).map(key =>
+                    `${mysql.escapeId(key)} = ${mysql.escape(levelObj[key])}`).join(', ')} ` +
+                `WHERE id=${mysql.escape(id)}`;
+        }
+
+        this.connection.query(query, (err3) => {
+            if (err3) {
+                console.error(err3);
+                callback({ err: err3 });
+                return;
+            }
+
+            callback({ ok: 'ok' });
+        });
+    }
+
+    deleteLevel(levelId, callback) {
+        this.connection.query(`DELETE FROM Dragons_leveling WHERE id=${mysql.escape(levelId)}`, (err3, results3) => {
+            if (err3) {
+                console.error(err3);
+                callback({ err: err3 });
+                return;
+            }
+
+            if (results3.affectedRows !== 1) {
+                callback({ err: 'err' });
                 return;
             }
 

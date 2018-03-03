@@ -143,6 +143,10 @@
   transform: translateY(-50%);
 }
 
+.dragon-table input[type="number"] {
+  width: 40px;
+}
+
 /******* image loading anim (from http://tobiasahlin.com/spinkit/) ********/
 
 .image-loader-anim {

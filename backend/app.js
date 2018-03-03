@@ -34,6 +34,11 @@ function parseCookies(cookieString = '') {
     return cookies;
 }
 
+function parseRequiredParams(requiredParamArray, paramObject) {
+    return requiredParamArray.every(param =>
+        paramObject[param] && paramObject[param][0] !== undefined);
+}
+
 const server = http.createServer((req, res) => {
     const cookies = parseCookies(req.headers.cookie);
 
@@ -256,9 +261,29 @@ const server = http.createServer((req, res) => {
                     });
                 }
             });
-        /**
-         * date has to be in format YYYY_MM_DD
-         */
+        } else if (req.url.substr(0, '/delete_level'.length) === '/delete_level') {
+            databaseManager.getUserFromCookie(cookies.token, (result) => {
+                if (result.err !== undefined || result.user === undefined || result.user.role !== 'admin') {
+                    res.writeHead(403);
+                    res.end();
+                } else if (req.url.split('?')[1] === undefined || req.url.split('?')[1].split('=')[1] === undefined) {
+                    res.writeHead(400);
+                    res.end();
+                } else {
+                    const levelId = req.url.split('?')[1].split('=')[1];
+                    databaseManager.deleteLevel(levelId, (result2) => {
+                        if (result2.ok !== undefined) {
+                            res.end(JSON.stringify({ ok: 'ok' }));
+                        } else {
+                            res.writeHead(500);
+                            res.end();
+                        }
+                    });
+                }
+            });
+            /**
+             * date has to be in format YYYY_MM_DD
+             */
         } else if (req.url.substr(0, '/change_points_date'.length) === '/change_points_date') {
             databaseManager.getUserFromCookie(cookies.token, (result) => {
                 if (result.err !== undefined || result.user === undefined || result.user.role !== 'admin') {
@@ -392,7 +417,7 @@ const server = http.createServer((req, res) => {
         let body = '';
 
         if (req.url === '/upload' || req.url === '/add_user' || req.url === '/modify_points'
-            || req.url === '/add_points' || req.url === '/add_team' || req.url === '/add_region'
+            || req.url === '/add_points' || req.url === '/add_team' || req.url === '/add_region' || req.url === '/add_level'
         ) {
             const form = new multiparty.Form();
 
@@ -522,15 +547,42 @@ const server = http.createServer((req, res) => {
                             res.writeHead(403);
                             res.end();
                         } else if (
-                        (fields.id !== undefined && fields.id[0] !== undefined)
-                        || (fields.name !== undefined && fields.name[0] !== undefined
-                            && fields.distance !== undefined && fields.distance[0] !== undefined
-                        )) {
+                            (fields.id !== undefined && fields.id[0] !== undefined)
+                            || (fields.name !== undefined && fields.name[0] !== undefined
+                                && fields.distance !== undefined && fields.distance[0] !== undefined
+                            )) {
                             const newRegion = {};
                             Object.keys(fields).forEach((name) => {
                                 newRegion[name] = fields[name][0];
                             });
                             databaseManager.addRegion(newRegion, (result2) => {
+                                if (result2.ok !== undefined) {
+                                    res.end(JSON.stringify({ ok: 'ok' }));
+                                } else {
+                                    res.writeHead(500);
+                                    res.end(JSON.stringify({ err: 'err' }));
+                                }
+                            });
+                        } else {
+                            res.writeHead(400);
+                            res.end(JSON.stringify({ err: 'err' }));
+                        }
+                    });
+                } else if (req.url === '/add_level') {
+                    console.log(fields);
+                    databaseManager.getUserFromCookie(cookies.token, (result) => {
+                        if (result.err !== undefined || result.user === undefined || result.user.role !== 'admin') {
+                            res.writeHead(403);
+                            res.end();
+                        } else if (
+                            (fields.id !== undefined && fields.id[0] !== undefined)
+                            || (parseRequiredParams(['xp', 'level', 'strength', 'defence', 'range', 'hp', 'dragonId'], fields)
+                        )) {
+                            const newLevel = {};
+                            Object.keys(fields).forEach((name) => {
+                                newLevel[name] = fields[name][0];
+                            });
+                            databaseManager.addLevel(newLevel, (result2) => {
                                 if (result2.ok !== undefined) {
                                     res.end(JSON.stringify({ ok: 'ok' }));
                                 } else {
