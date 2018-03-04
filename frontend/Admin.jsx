@@ -121,7 +121,10 @@ export default class Admin extends Component {
                         <Route
                             path="/admin/dragons"
                             render={() =>
-                                <AdminDragons databaseObjects={this.props.databaseObjects} />
+                                (<AdminDragons
+                                    databaseObjects={this.props.databaseObjects}
+                                    isEditable
+                                />)
                             }
                         />
                         <Route component={Page404} />

@@ -6,6 +6,9 @@ import {
 } from 'react-router-dom';
 import createBrowserHistory from 'history/createBrowserHistory';
 import Popup from 'react-popup';
+import {NotificationContainer} from 'react-notifications';
+
+import 'react-notifications/lib/notifications.css';
 
 import App from './App';
 import Admin from './Admin';
@@ -159,6 +162,7 @@ export default class Main extends Component {
             <Router history={this.history}>
                 <div className="container fullpage-container">
                     <Popup />
+                    <NotificationContainer />
                     <Switch>
                         <Route exact path="/" component={App} />
                         <Route

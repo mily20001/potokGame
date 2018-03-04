@@ -147,6 +147,20 @@
   width: 40px;
 }
 
+.add-new-dragon {
+  text-align: center;
+  font-size: 80px;
+  width: 100%;
+
+  & i {
+    cursor: pointer;
+  }
+}
+
+.dragon-title i {
+  cursor: pointer;
+}
+
 /******* image loading anim (from http://tobiasahlin.com/spinkit/) ********/
 
 .image-loader-anim {

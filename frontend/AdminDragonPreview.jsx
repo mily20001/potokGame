@@ -6,21 +6,25 @@ import './AdminDragons.scss';
 import AdminDragonImage from './AdminDragonImage';
 
 export default function AdminDragonPreview(props) {
-    const imageList = Object.keys(props.databaseObjects.images).map((id) => {
-        if (props.databaseObjects.images[id].type !== 'dragon') {
-            return undefined;
-        }
+    let imageList;
 
-        return (
-            <div className="dragon-dropdown-element" onClick={() => props.changeImage(id)}>
-                <AdminDragonImage
-                    imageId={parseInt(id, 10)}
-                    getImage={props.databaseObjects.getImage}
-                />
-                {props.databaseObjects.images[id].filename}
-            </div>
-        );
-    }).filter(row => row !== undefined);
+    if (props.isEditable) {
+        imageList = Object.keys(props.databaseObjects.images).map((id) => {
+            if (props.databaseObjects.images[id].type !== 'dragon') {
+                return undefined;
+            }
+
+            return (
+                <div className="dragon-dropdown-element" onClick={() => props.changeImage(id)}>
+                    <AdminDragonImage
+                        imageId={parseInt(id, 10)}
+                        getImage={props.databaseObjects.getImage}
+                    />
+                    {props.databaseObjects.images[id].filename}
+                </div>
+            );
+        }).filter(row => row !== undefined);
+    }
 
     const imageId = props.databaseObjects.dragons[props.dragonId]
         && props.databaseObjects.dragons[props.dragonId].image
@@ -35,12 +39,14 @@ export default function AdminDragonPreview(props) {
                     // forceLoad={props.isBeingUpdated}
                 />
             </div>
-            <div className="dragon dropdown">
-                <button className="dragon dropbtn">Zmień obrazek</button>
-                <div className="dragon dropdown-content">
-                    {imageList}
+            {props.isEditable &&
+                <div className="dragon dropdown">
+                    <button className="dragon dropbtn">Zmień obrazek</button>
+                    <div className="dragon dropdown-content">
+                        {imageList}
+                    </div>
                 </div>
-            </div>
+            }
         </div>
     );
 }
@@ -50,9 +56,11 @@ AdminDragonPreview.propTypes = {
     dragonId: PropTypes.number.isRequired,
     changeImage: PropTypes.func,
     isBeingUpdated: PropTypes.bool,
+    isEditable: PropTypes.bool,
 };
 
 AdminDragonPreview.defaultProps = {
     changeImage: () => {},
     isBeingUpdated: false,
+    isEditable: false,
 };

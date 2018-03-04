@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import RandomString from 'randomstring';
+import { NotificationManager } from 'react-notifications';
 
 import AdminPointsMainTable from './AdminPointsMainTable';
 import './AdminPoints.scss';
@@ -231,17 +232,17 @@ export default class AdminPoints extends Component {
             try {
                 const uploadResponse = JSON.parse(xhr.responseText);
                 if (uploadResponse.ok !== undefined) {
+                    NotificationManager.success('', 'Pomyślnie usunięto datę');
                     const dates = [...this.state.dates];
                     const filteredDates = dates.filter(date =>
                         (new Date(date)).valueOf() !== dateToRemove.valueOf());
 
                     this.setState({ dates: filteredDates });
                 } else {
-                    // TODO print some error
-                    /**/
+                    NotificationManager.error('Nie udało się usunąć daty', 'Błąd', 5000);
                 }
             } catch (reqErr) {
-                /**/
+                NotificationManager.error('Nie udało się usunąć daty', 'Błąd', 5000);
             }
         };
         xhr.send();
@@ -263,6 +264,7 @@ export default class AdminPoints extends Component {
             try {
                 const uploadResponse = JSON.parse(xhr.responseText);
                 if (uploadResponse.ok !== undefined) {
+                    NotificationManager.success('', 'Pomyślnie zmieniono datę');
                     const dates = [...this.state.dates];
                     const updatedDates = dates.map((date) => {
                         if ((new Date(date)).valueOf() === (new Date(oldDate)).valueOf()) {
@@ -280,11 +282,10 @@ export default class AdminPoints extends Component {
 
                     this.setState({ dates: updatedDates, userPoints: { ...userPoints } });
                 } else {
-                    // TODO print some error
-                    /**/
+                    NotificationManager.error('Nie udało się zmienić daty', 'Błąd', 5000);
                 }
             } catch (reqErr) {
-                /**/
+                NotificationManager.error('Nie udało się zmienić daty', 'Błąd', 5000);
             }
         };
         xhr.send();
@@ -345,13 +346,14 @@ export default class AdminPoints extends Component {
             try {
                 const uploadResponse = JSON.parse(xhr.responseText);
                 if (uploadResponse.ok !== undefined) {
+                    NotificationManager.success('', 'Zapisano nowe punkty i datę');
                     this.setState({ addNewDatePanelVisible: false });
                     this.props.databaseObjects.refreshDatabase('users');
                 } else {
-                   // add some error info
+                    NotificationManager.error('Nie udało się zapisać nowych punktów i daty', 'Błąd', 5000);
                 }
             } catch (reqErr) {
-                // add some error info
+                NotificationManager.error('Nie udało się zapisać nowych punktów i daty', 'Błąd', 5000);
             }
         };
         xhr.send(data);

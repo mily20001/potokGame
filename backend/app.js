@@ -13,6 +13,8 @@ const filesMap = {
     '/logo.svg': { file: '', code: 200, headers: { 'Content-Type': 'image/svg+xml' } },
     '/js/main.js': { file: '', code: 200, headers: { 'Content-Type': 'text/javascript' } },
     '/css/main.bundle.css': { file: '', code: 200, headers: { 'Content-Type': 'text/css' } },
+    '/notification.woff': { file: '', code: 200, headers: { 'Content-Type': 'application/font-woff' } },
+    '/notification.ttf': { file: '', code: 200, headers: { 'Content-Type': 'application/octet-stream' } },
 };
 
 const databaseManager = new DatabaseManager();
@@ -403,6 +405,86 @@ const server = http.createServer((req, res) => {
                                 }
                             });
                     }
+                }
+            });
+        } else if (req.url.substr(0, '/change_dragon_name'.length) === '/change_dragon_name') {
+            databaseManager.getUserFromCookie(cookies.token, (result) => {
+                if (result.err !== undefined || result.user === undefined || result.user.role !== 'admin') {
+                    res.writeHead(403);
+                    res.end();
+                } else if (req.url.split('?')[1] === undefined) {
+                    res.writeHead(400);
+                    res.end();
+                } else if (req.url.split('?')[1].split('&').length !== 2) {
+                    res.writeHead(400);
+                    res.end();
+                } else {
+                    let paramsOk = true;
+                    const reqParams = req.url.split('?')[1].split('&').reduce((allParams, param) => {
+                        if (param.split('=').length !== 2) {
+                            paramsOk = false;
+                        }
+                        return { ...allParams, [param.split('=')[0]]: param.split('=')[1] };
+                    }, {});
+
+                    if (!(reqParams.dragonId && reqParams.newName)) {
+                        paramsOk = false;
+                    }
+
+                    if (!paramsOk) {
+                        res.writeHead(400);
+                        res.end();
+                    } else {
+                        databaseManager.changeDragonName(reqParams.dragonId,
+                            decodeURIComponent(reqParams.newName), (result2) => {
+                                if (result2.ok !== undefined) {
+                                    res.end(JSON.stringify({ ok: 'ok' }));
+                                } else {
+                                    res.writeHead(500);
+                                    res.end();
+                                }
+                            });
+                    }
+                }
+            });
+        } else if (req.url.substr(0, '/add_dragon_by_name'.length) === '/add_dragon_by_name') {
+            databaseManager.getUserFromCookie(cookies.token, (result) => {
+                if (result.err !== undefined || result.user === undefined || result.user.role !== 'admin') {
+                    res.writeHead(403);
+                    res.end();
+                } else if (req.url.split('?')[1] === undefined || req.url.split('?')[1].split('=')[1] === undefined) {
+                    res.writeHead(400);
+                    res.end();
+                } else {
+                    const dragonName = decodeURIComponent(req.url.split('?')[1].split('=')[1]);
+                    databaseManager.addDragonByName(dragonName, (result2) => {
+                        if (result2.ok !== undefined) {
+                            res.end(JSON.stringify({ ok: 'ok' }));
+                        } else {
+                            res.writeHead(500);
+                            res.end();
+                        }
+                    });
+                }
+            });
+        } else if (req.url.substr(0, '/delete_dragon'.length) === '/delete_dragon') {
+            databaseManager.getUserFromCookie(cookies.token, (result) => {
+                if (result.err !== undefined || result.user === undefined || result.user.role !== 'admin') {
+                    res.writeHead(403);
+                    res.end();
+                } else if (req.url.split('?')[1] === undefined || req.url.split('?')[1].split('=')[1] === undefined) {
+                    res.writeHead(400);
+                    res.end();
+                } else {
+                    const dragonId = req.url.split('?')[1].split('=')[1];
+                    databaseManager.deleteDragon(dragonId, (result2) => {
+                        if (result2.ok !== undefined) {
+                            res.end(JSON.stringify({ ok: 'ok' }));
+                        } else {
+                            res.writeHead(500);
+                            res.end();
+                        }
+                    });
                 }
             });
         } else if (req.url.search(/\./) === -1) {

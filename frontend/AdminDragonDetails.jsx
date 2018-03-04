@@ -1,8 +1,9 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
+import Popup from 'react-popup';
+import { NotificationManager } from 'react-notifications';
 
 import './AdminDragons.scss';
-import Popup from "react-popup";
 
 export default class AdminDragonDetails extends Component {
     constructor() {
@@ -54,7 +55,9 @@ export default class AdminDragonDetails extends Component {
             data.append(key, this.state.changes[key]);
         });
 
-        if (this.state.editedColId !== undefined) {
+        const isEdited = this.state.editedColId !== undefined;
+
+        if (isEdited) {
             data.append('id', this.state.editedColId);
         }
 
@@ -67,18 +70,27 @@ export default class AdminDragonDetails extends Component {
             try {
                 const uploadResponse = JSON.parse(xhr.responseText);
                 if (uploadResponse.ok !== undefined) {
-                    this.setState({ status: 0 });
+                    if (isEdited) {
+                        NotificationManager.success('', 'Pomyślnie zmieniono poziom');
+                    } else {
+                        NotificationManager.success('', 'Pomyślnie dodano nowy poziom');
+                    }
                     this.props.refreshDatabase('dragons');
                     this.cancelEdit();
+                } else if (isEdited) {
+                    NotificationManager.error('Nie udało się edytować poziomu', 'Błąd');
                 } else {
-                    this.setState({ status: 3 });
+                    NotificationManager.error('Nie udało się dodać nowego poziomu', 'Błąd');
                 }
             } catch (e) {
-                this.setState({ status: 3 });
+                if (isEdited) {
+                    NotificationManager.error('Nie udało się edytować poziomu', 'Błąd');
+                } else {
+                    NotificationManager.error('Nie udało się dodać nowego poziomu', 'Błąd');
+                }
             }
         };
         xhr.send(data);
-        this.setState({ status: -1 });
     }
 
     deleteCol(colId) {
@@ -101,6 +113,7 @@ export default class AdminDragonDetails extends Component {
                             try {
                                 const result = JSON.parse(xhr.responseText);
                                 if (result.ok !== undefined) {
+                                    NotificationManager.success('', 'Pomyślnie usunięto poziom');
                                     this.props.refreshDatabase('dragons');
                                     Popup.close();
                                 } else {
@@ -127,9 +140,12 @@ export default class AdminDragonDetails extends Component {
             defence: [<th>Obrona</th>],
             range: [<th>Zasięg</th>],
             hp: [<th>Życie</th>],
-            edit: [<th>Edytuj</th>],
-            remove: [<th>Usuń</th>],
         };
+
+        if (this.props.isEditable) {
+            levelTableRow.edit = [<th>Edytuj</th>];
+            levelTableRow.remove = [<th>Usuń</th>];
+        }
 
         const dragon = this.props.dragon;
 
@@ -169,17 +185,22 @@ export default class AdminDragonDetails extends Component {
                 Object.keys(level).forEach((key) => {
                     levelTableRow[key].push(<td>{level[key]}</td>);
                 });
-                levelTableRow.edit.push(
-                    <td>
-                        <i
-                            className="fa fa-edit"
-                            onClick={() => this.setState({ changes: level, editedColId: levelId })}
-                        />
-                    </td>);
-                levelTableRow.remove.push(
-                    <td>
-                        <i className="fa fa-trash" onClick={() => this.deleteCol(levelId)} />
-                    </td>);
+                if (this.props.isEditable) {
+                    levelTableRow.edit.push(
+                        <td>
+                            <i
+                                className="fa fa-edit"
+                                onClick={() => this.setState({
+                                    changes: level,
+                                    editedColId: levelId,
+                                })}
+                            />
+                        </td>);
+                    levelTableRow.remove.push(
+                        <td>
+                            <i className="fa fa-trash" onClick={() => this.deleteCol(levelId)} />
+                        </td>);
+                }
             } else {
                 const level = { ...dragon.levels[levelId] };
 
@@ -234,9 +255,11 @@ export default class AdminDragonDetails extends Component {
                         {Object.keys(levelTableRow).map(rowId => <tr>{levelTableRow[rowId]}</tr>)}
                     </tbody>
                 </table>
-                <div className="dragon-details-new-level" onClick={this.prepareNewField}>
-                    <i className="fa fa-plus" />
-                </div>
+                {this.props.isEditable &&
+                    <div className="dragon-details-new-level" onClick={this.prepareNewField}>
+                        <i className="fa fa-plus" />
+                    </div>
+                }
             </div>
         );
     }
@@ -245,8 +268,10 @@ export default class AdminDragonDetails extends Component {
 AdminDragonDetails.propTypes = {
     dragon: PropTypes.object.isRequired,
     refreshDatabase: PropTypes.func,
+    isEditable: PropTypes.bool,
 };
 
 AdminDragonDetails.defaultProps = {
     refreshDatabase: () => {},
+    isEditable: false,
 };

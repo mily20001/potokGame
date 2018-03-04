@@ -690,6 +690,48 @@ export default class DatabaseManager {
         });
     }
 
+    addDragonByName(dragonName, callback) {
+        const query = `INSERT INTO Dragons (name) VALUES (${mysql.escape(dragonName)})`;
+
+        this.connection.query(query, (err) => {
+            if (err) {
+                console.error(err);
+                callback({ err });
+                return;
+            }
+
+            callback({ ok: 'ok' });
+        });
+    }
+
+    changeDragonName(dragonId, dragonName, callback) {
+        const query = `UPDATE Dragons SET name = ${mysql.escape(dragonName)} WHERE id = ${mysql.escape(dragonId)}`;
+
+        this.connection.query(query, (err) => {
+            if (err) {
+                console.error(err);
+                callback({ err });
+                return;
+            }
+
+            callback({ ok: 'ok' });
+        });
+    }
+
+    deleteDragon(dragonId, callback) {
+        const query = `DELETE FROM Dragons WHERE id = ${mysql.escape(dragonId)}`;
+
+        this.connection.query(query, (err) => {
+            if (err) {
+                console.error(err);
+                callback({ err });
+                return;
+            }
+
+            callback({ ok: 'ok' });
+        });
+    }
+
     login(username, password, callback) {
         this.connection.query(`SELECT * from Players WHERE username = ${mysql.escape(username)}`, (err, results) => {
             if (err) {
