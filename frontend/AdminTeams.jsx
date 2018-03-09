@@ -27,6 +27,7 @@ export default class AdminTeams extends Component {
                         <AdminTeamList
                             editTeam={(team) => { this.setState({ editedTeam: team }); }}
                             databaseObjects={this.props.databaseObjects}
+                            isEditable
                         />
                     </div>
                 </div>

@@ -5,15 +5,8 @@ import {
     Switch,
 } from 'react-router-dom';
 
-import AdminWelcomePage from './AdminWelcomePage';
-import AdminSidebar from './AdminSidebar';
-import AdminNavbar from './AdminNavbar';
-import FileUploader from './FileUploader';
-import AdminMapManager from './AdminMapManager';
-import AdminUsers from './AdminUsers';
 import AdminPoints from './AdminPoints';
-import AdminTeams from './AdminTeams';
-import AdminRegions from './AdminRegions';
+import AdminTeamList from './AdminTeamList';
 import AdminDragons from './AdminDragons';
 import Page404 from './Page404';
 import UserWelcomePage from './UserWelcomePage';
@@ -60,7 +53,9 @@ export default class User extends Component {
                         <Route
                             path="/user/teams"
                             render={() =>
-                                <AdminTeams databaseObjects={this.props.databaseObjects} />
+                                <div className="container">
+                                    <AdminTeamList databaseObjects={this.props.databaseObjects} />
+                                </div>
                             }
                         />
                         <Route component={Page404} />

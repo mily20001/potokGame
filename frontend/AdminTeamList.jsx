@@ -54,18 +54,22 @@ export default class AdminTeamList extends Component {
                         style={{ backgroundColor: this.props.databaseObjects.teams[key].color }}
                     />
                 </td>
-                <td
-                    className="text-center"
-                    onClick={() => this.props.editTeam(this.props.databaseObjects.teams[key])}
-                >
-                    <i className="fa fa-edit" />
-                </td>
-                <td
-                    className="text-center"
-                    onClick={() => this.deleteTeam(key)}
-                >
-                    <i className="fa fa-trash" />
-                </td>
+                {this.props.isEditable &&
+                    <td
+                        className="text-center"
+                        onClick={() => this.props.editTeam(this.props.databaseObjects.teams[key])}
+                    >
+                        <i className="fa fa-edit" />
+                    </td>
+                }
+                {this.props.isEditable &&
+                    <td
+                        className="text-center"
+                        onClick={() => this.deleteTeam(key)}
+                    >
+                        <i className="fa fa-trash" />
+                    </td>
+                }
             </tr>));
 
         return (
@@ -76,8 +80,8 @@ export default class AdminTeamList extends Component {
                             <th>Nazwa drużyny</th>
                             <th>Kapitan</th>
                             <th>Kolor</th>
-                            <th>Edytuj</th>
-                            <th>Usuń</th>
+                            {this.props.isEditable && <th>Edytuj</th>}
+                            {this.props.isEditable && <th>Usuń</th>}
                         </tr>
                     </thead>
                     <tbody>
@@ -92,5 +96,11 @@ export default class AdminTeamList extends Component {
 
 AdminTeamList.propTypes = {
     databaseObjects: PropTypes.object.isRequired,
-    editTeam: PropTypes.func.isRequired,
+    editTeam: PropTypes.func,
+    isEditable: PropTypes.bool,
+};
+
+AdminTeamList.defaultProps = {
+    editTeam: () => {},
+    isEditable: false,
 };
