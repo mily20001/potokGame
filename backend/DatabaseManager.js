@@ -274,54 +274,58 @@ export default class DatabaseManager {
                 return;
             }
 
+            let players = {};
+
             // TODO czy pokazywać prawdziwe hp?
             if (requestRole === 'admin') {
-                const players = results.reduce((allPlayers, player) =>
+                players = results.reduce((allPlayers, player) =>
                     ({ ...allPlayers, [player.id]: { ...player, password: undefined } }), {});
-
-                let queriesToBeDone = results.length;
-
-                Object.keys(players).forEach((key) => {
-                    this.connection.query(`SELECT * from Points WHERE player_id=${key}`, (err2, results2) => {
-                        if (err2) {
-                            console.error(err2);
-                            callback({ err: err2 });
-                            return;
-                        }
-
-                        players[key].points = {};
-
-                        results2.forEach((pointsRow) => {
-                            players[key].points[pointsRow.date] = {
-                                id: pointsRow.id,
-                                points_punktualnosc: pointsRow.points_punktualnosc,
-                                points_przygotowanie: pointsRow.points_przygotowanie,
-                                points_skupienie: pointsRow.points_skupienie,
-                                points_efekt: pointsRow.points_efekt,
-                            };
-                        });
-
-                        queriesToBeDone--;
-
-                        if (queriesToBeDone === 0) {
-                            callback({ players });
-                        }
-                    });
-                });
             } else if (requestRole === 'player') {
-                const players = results.reduce((allPlayers, player) =>
-                    ({ ...allPlayers,
-                        [player.id]: { ...player,
+                players = results.reduce((allPlayers, player) => {
+                    if (player.role === 'admin') return allPlayers;
+                    return ({
+                        ...allPlayers,
+                        [player.id]: {
+                            ...player,
                             password: undefined,
-                            current_field: undefined,
                             next_field: undefined,
-                            role: undefined,
-                        } }), {});
-
-                callback({ players });
+                        },
+                    });
+                }, {});
             } else {
                 callback({ err: 'err' });
+                return;
             }
+
+            let queriesToBeDone = Object.keys(players).length;
+
+            Object.keys(players).forEach((key) => {
+                this.connection.query(`SELECT * from Points WHERE player_id=${key}`, (err2, results2) => {
+                    if (err2) {
+                        console.error(err2);
+                        callback({ err: err2 });
+                        return;
+                    }
+
+                    players[key].points = {};
+
+                    results2.forEach((pointsRow) => {
+                        players[key].points[pointsRow.date] = {
+                            id: pointsRow.id,
+                            points_punktualnosc: pointsRow.points_punktualnosc,
+                            points_przygotowanie: pointsRow.points_przygotowanie,
+                            points_skupienie: pointsRow.points_skupienie,
+                            points_efekt: pointsRow.points_efekt,
+                        };
+                    });
+
+                    queriesToBeDone--;
+
+                    if (queriesToBeDone === 0) {
+                        callback({ players });
+                    }
+                });
+            });
         });
     }
 

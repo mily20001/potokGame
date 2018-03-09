@@ -12,6 +12,7 @@ import 'react-notifications/lib/notifications.css';
 
 import App from './App';
 import Admin from './Admin';
+import User from './User';
 import Login from './Login';
 import LoadingScreen from './LoadingScreen';
 import Page404 from './Page404';
@@ -127,6 +128,16 @@ export default class Main extends Component {
         ]);
     }
 
+    getUserDatabaseObjects() {
+        return Promise.all([this.getDatabaseData('/get_dragons', 'dragons'),
+            this.getDatabaseData('/get_teams', 'teams'),
+            this.getDatabaseData('/get_users', 'users'),
+            this.getDatabaseData('/get_fields', 'fields'),
+            this.getDatabaseData('/get_regions', 'regions'),
+            this.getDatabaseData('/get_image_list', 'images'),
+        ]);
+    }
+
     setUser(user) {
         console.log(user);
         this.setState({ user }, () => {
@@ -138,7 +149,10 @@ export default class Main extends Component {
 
                 this.getAdminDatabaseObjects().then(() => this.history.push(destAddr));
             } else if (user.role === 'player') {
-                this.history.push('/');
+                const destAddr = (this.redirectPath === '/' || this.redirectPath === '/loading' || this.redirectPath === '/login')
+                    ? '/user' : this.redirectPath;
+
+                this.getUserDatabaseObjects().then(() => this.history.push(destAddr));
             }
         });
     }
@@ -172,6 +186,14 @@ export default class Main extends Component {
                                 user={this.state.user}
                                 databaseObjects={this.state.databaseObjects}
                             />)}
+                        />
+                        <Route
+                            path="/user"
+                            render={() =>
+                                (<User
+                                    user={this.state.user}
+                                    databaseObjects={this.state.databaseObjects}
+                                />)}
                         />
                         <Route
                             exact

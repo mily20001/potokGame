@@ -1,0 +1,51 @@
+$user-navbar-height: 50px;
+
+.user-main-container {
+  padding-top: $user-navbar-height + 20;
+  transition: .5s;
+}
+
+.user-navbar {
+  height: $user-navbar-height;
+  width: 100%;
+  z-index: 2;
+  position: fixed;
+  background-color: #1b8c1e;
+  display: flex;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+$user-tab-height: $user-navbar-height - 10;
+
+.user-navbar-tab-container {
+  background-color: red;
+  flex-grow: 1;
+  height: $user-tab-height;
+  margin-top: 10px;
+  margin-right: 20px;
+  margin-left: 5px;
+  display: flex;
+}
+
+.user-navbar-tab {
+  background-color: #15191d;
+  flex-grow: 1;
+  border: white solid 1px;
+  line-height: $user-tab-height;
+  text-align: center;
+
+  &:not(.active) {
+    cursor: pointer;
+  }
+
+  &.active {
+    background-color: #343a40;
+    border-bottom-width: 0;
+  }
+
+  &:hover:not(.active) {
+    background-color: #24282d;
+    border-bottom-width: 0;
+  }
+}

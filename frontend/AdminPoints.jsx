@@ -402,7 +402,7 @@ export default class AdminPoints extends Component {
                 onDateChange={this.changeDate}
                 onMouseEnter={this.rowMouseEntered}
                 onMouseLeave={this.rowMouseLeft}
-                isEditable
+                isEditable={this.props.isEditable}
             />);
         });
 
@@ -454,67 +454,72 @@ export default class AdminPoints extends Component {
                     <div className="points-table-container" id="scrollable-table">
                         {pointsTable}
                     </div>
-                    <div className="new-points-container" style={newPointsDivStyle}>
-                        <div
-                            className="new-points-table"
-                            style={{ width: `${this.state.addNewDatePanelVisible ? 250 : 0}px` }}
-                        >
-                            <AdminPointsMainTable
-                                dataArray={this.state.newPointsArray}
-                                onDateDelete={() =>
-                                    this.setState({ addNewDatePanelVisible: false })}
-                                valuesOnEdit={this.handleNewPointsToggle}
-                                onDateChange={this.handleNewPointsSave}
-                                onMouseEnter={this.rowMouseEntered}
-                                onMouseLeave={this.rowMouseLeft}
-                                isEditable
-                            />
+                    {this.props.isEditable &&
+                        <div className="new-points-container" style={newPointsDivStyle}>
+                            <div
+                                className="new-points-table"
+                                style={{ width: `${this.state.addNewDatePanelVisible ? 250 : 0}px` }}
+                            >
+                                <AdminPointsMainTable
+                                    dataArray={this.state.newPointsArray}
+                                    onDateDelete={() =>
+                                        this.setState({ addNewDatePanelVisible: false })}
+                                    valuesOnEdit={this.handleNewPointsToggle}
+                                    onDateChange={this.handleNewPointsSave}
+                                    onMouseEnter={this.rowMouseEntered}
+                                    onMouseLeave={this.rowMouseLeft}
+                                    isEditable
+                                />
+                            </div>
+
+                            <div
+                                className="new-points-toggle-button"
+                                style={{ width: `${this.state.addNewDatePanelVisible ? 0 : 50}px` }}
+                                onClick={() => this.startAddingNewPoints()}
+                            >
+                                <i className="fa fa-plus" />
+                            </div>
                         </div>
-                        <div
-                            className="new-points-toggle-button"
-                            style={{ width: `${this.state.addNewDatePanelVisible ? 0 : 50}px` }}
-                            onClick={() => this.startAddingNewPoints()}
-                        >
-                            <i className="fa fa-plus" />
-                        </div>
+                    }
+                </div>
+                {this.props.isEditable &&
+                    <div className="container points-instruction-container">
+                        <h3>Instrukcja obsługi:</h3> <br />
+                        <h4>Dodawanie punktów:</h4>
+                        Aby dodać nowe punkty, należy nacisnąć na <i className="fa fa-plus" /> po
+                        prawej stronie tabeli, następnie w nagłówku ustawić datę
+                        naciskając kolejno <i className="fa fa-plus" />, wybierając
+                        odpowiednią datę i potwierdzając wybór <i className="fa fa-check" />.
+                        Po ustawieniu daty należy ustawić wartości punktów dla poszczególnych
+                        graczy. Wartości można przełączać pomiędzy 0 a 1 klikając dwukrotnie na
+                        wybranej komórce tabeli.
+                        Po zakończonym wprowadzaniu punktów zmiany należy zapisać
+                        używając <i className="fa fa-save" />.
+                        Po udanym zapisie boczny panel powinien się automatycznie zamknąć,
+                        a nowa kolumna powinna zostać dodana do głównej tabeli.
+                        Jeśli tak się nie stanie, oznacza to że zapis nie powiódł się,
+                        należy przede wszystkim sprawdzić, czy nie istnieje już kolumna
+                        z podaną datą.
+                        <br /><br />
+                        <h4>Edycja punktów:</h4>
+                        Aby zmienić wartość punktów w głównej tabeli, należy dwukrotnie kliknąć
+                        na wybranej komórce. Zmieniona komórka podświetli się
+                        na <span className="points-changed">czerwono</span>.
+                        Zmiany są zapisywane automatycznie co 10s, w trakcie zapisu kolor komórki
+                        zmienia się
+                        na <span className="points-ongoing">żółty</span>,
+                        a po udanym zapisie na <span className="points-saved">zielony</span>.
+                        <br /><br />
+                        <h4>Edycja daty/usuwanie danych:</h4>
+                        Aby wyedytować datę kolumny danych, należy najechać na tą kolumnę
+                        myszką i nacisnąć przycisk <i className="fa fa-edit" />, a następnie
+                        ustawić datę i zapisać zmiany klikając <i className="fa fa-check" />.
+                        Edycję można anulować naciskając <i className="fa fa-times" />. <br />
+                        Naciśnięcie <i className="fa fa-trash" /> spowoduje usunięcie całej kolumny
+                        danych, po uprzednim potwierdzeniu tej operacji.
+                        <br /><br />
                     </div>
-                </div>
-                <div className="container points-instruction-container">
-                    <h3>Instrukcja obsługi:</h3> <br />
-                    <h4>Dodawanie punktów:</h4>
-                    Aby dodać nowe punkty, należy nacisnąć na <i className="fa fa-plus" /> po
-                    prawej stronie tabeli, następnie w nagłówku ustawić datę
-                    naciskając kolejno <i className="fa fa-plus" />, wybierając
-                    odpowiednią datę i potwierdzając wybór <i className="fa fa-check" />.
-                    Po ustawieniu daty należy ustawić wartości punktów dla poszczególnych graczy.
-                    Wartości można przełączać pomiędzy 0 a 1 klikając dwukrotnie na
-                    wybranej komórce tabeli.
-                    Po zakończonym wprowadzaniu punktów zmiany należy zapisać
-                    używając <i className="fa fa-save" />.
-                    Po udanym zapisie boczny panel powinien się automatycznie zamknąć,
-                    a nowa kolumna powinna zostać dodana do głównej tabeli.
-                    Jeśli tak się nie stanie, oznacza to że zapis nie powiódł się,
-                    należy przede wszystkim sprawdzić, czy nie istnieje już kolumna
-                    z podaną datą.
-                    <br /><br />
-                    <h4>Edycja punktów:</h4>
-                    Aby zmienić wartość punktów w głównej tabeli, należy dwukrotnie kliknąć
-                    na wybranej komórce. Zmieniona komórka podświetli się
-                    na <span className="points-changed">czerwono</span>.
-                    Zmiany są zapisywane automatycznie co 10s, w trakcie zapisu kolor komórki
-                    zmienia się
-                    na <span className="points-ongoing">żółty</span>,
-                    a po udanym zapisie na <span className="points-saved">zielony</span>.
-                    <br /><br />
-                    <h4>Edycja daty/usuwanie danych:</h4>
-                    Aby wyedytować datę kolumny danych, należy najechać na tą kolumnę
-                    myszką i nacisnąć przycisk <i className="fa fa-edit" />, a następnie
-                    ustawić datę i zapisać zmiany klikając <i className="fa fa-check" />.
-                    Edycję można anulować naciskając <i className="fa fa-times" />. <br />
-                    Naciśnięcie <i className="fa fa-trash" /> spowoduje usunięcie całej kolumny
-                    danych, po uprzednim potwierdzeniu tej operacji.
-                    <br /><br />
-                </div>
+                }
             </div>
         );
     }
@@ -522,4 +527,9 @@ export default class AdminPoints extends Component {
 
 AdminPoints.propTypes = {
     databaseObjects: PropTypes.object.isRequired,
+    isEditable: PropTypes.bool,
+};
+
+AdminPoints.defaultProps = {
+    isEditable: false,
 };

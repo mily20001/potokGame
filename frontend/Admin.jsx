@@ -103,7 +103,10 @@ export default class Admin extends Component {
                             exact
                             path="/admin/points"
                             render={() =>
-                                <AdminPoints databaseObjects={this.props.databaseObjects} />
+                                (<AdminPoints
+                                    databaseObjects={this.props.databaseObjects}
+                                    isEditable
+                                />)
                             }
                         />
                         <Route

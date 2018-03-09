@@ -59,7 +59,7 @@ export default class AdminPointsMainTable extends Component {
                     <tr>
                         <AdminPointsDateHeader
                             date={this.props.headerDate}
-                            isEditable
+                            isEditable={this.props.isEditable}
                             onDelete={() => this.props.onDateDelete(this.props.headerDate)}
                             onSave={(newDate) => {
                                 this.props.onDateChange(this.props.headerDate, newDate);
