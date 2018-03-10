@@ -20,6 +20,10 @@ export default function UserNavbar(props) {
             title: 'Przegląd drużyn',
             href: '/user/teams',
         },
+        {
+            title: 'Przegląd graczy',
+            href: '/user/players',
+        },
     ];
 
     const tabs = tabList.map((tab) => {

@@ -13,6 +13,7 @@ import UserWelcomePage from './UserWelcomePage';
 import UserNavbar from './UserNavbar';
 
 import './User.scss';
+import UserList from "./UserList";
 
 export default class User extends Component {
     constructor() {
@@ -53,9 +54,17 @@ export default class User extends Component {
                         <Route
                             path="/user/teams"
                             render={() =>
-                                <div className="container">
+                                (<div className="container">
                                     <AdminTeamList databaseObjects={this.props.databaseObjects} />
-                                </div>
+                                </div>)
+                            }
+                        />
+                        <Route
+                            path="/user/players"
+                            render={() =>
+                                (<div className="container">
+                                    <UserList databaseObjects={this.props.databaseObjects} />
+                                </div>)
                             }
                         />
                         <Route component={Page404} />
