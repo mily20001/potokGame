@@ -16,6 +16,7 @@ import AdminTeams from './AdminTeams';
 import AdminRegions from './AdminRegions';
 import AdminDragons from './AdminDragons';
 import Page404 from './Page404';
+import UserList from './UserList';
 
 export default class Admin extends Component {
     constructor() {
@@ -94,7 +95,7 @@ export default class Admin extends Component {
                             component={AdminMapManager}
                         />
                         <Route
-                            path="/admin/users"
+                            path="/admin/add_user"
                             render={() =>
                                 <AdminUsers databaseObjects={this.props.databaseObjects} />
                             }
@@ -126,6 +127,16 @@ export default class Admin extends Component {
                             render={() =>
                                 (<AdminDragons
                                     databaseObjects={this.props.databaseObjects}
+                                    isEditable
+                                />)
+                            }
+                        />
+                        <Route
+                            path="/admin/users"
+                            render={() =>
+                                (<UserList
+                                    databaseObjects={this.props.databaseObjects}
+                                    isAdmin
                                     isEditable
                                 />)
                             }

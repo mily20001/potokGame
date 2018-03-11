@@ -2,6 +2,8 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import Popup from 'react-popup';
 
+import './User.scss';
+
 export default class UserList extends Component {
     deleteUser(userId) {
         const user = this.props.databaseObjects.users[userId];
@@ -63,12 +65,19 @@ export default class UserList extends Component {
             headerFields.push('Drużyna', 'Smok', 'HP', 'XP');
             if (this.props.isAdmin) {
                 fields.push('starting_xp');
-                headerFields.push('Początkowe XP');
+                headerFields.push('Bonusowe XP');
+            }
+            fields.push('current_field_name');
+            headerFields.push('Aktualne pole');
+
+            if (this.props.isAdmin) {
+                fields.push('next_field_name');
+                headerFields.push('Następne pole');
             }
         }
 
         if (this.props.isEditable) {
-            headerFields.push('Edytuj', 'Usuń');
+            headerFields.push('Edytuj', 'Reset hasła', 'Usuń');
         }
 
         const header = headerFields.map(field => <th>{field}</th>);
@@ -93,6 +102,14 @@ export default class UserList extends Component {
                 columns.push(
                     <td
                         className="text-center"
+                        onClick={() => this.resetPassword(key)}
+                    >
+                        <i className="fa fa-key" />
+                    </td>);
+
+                columns.push(
+                    <td
+                        className="text-center"
                         onClick={() => this.deleteUser(key)}
                     >
                         <i className="fa fa-trash" />
@@ -103,7 +120,7 @@ export default class UserList extends Component {
         });
 
         return (
-            <div className="bg-dark text-light">
+            <div className="bg-dark text-light user-list-container">
                 <table className="table table-dark table-hover">
                     <thead>
                         <tr>

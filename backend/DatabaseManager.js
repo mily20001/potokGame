@@ -267,12 +267,24 @@ export default class DatabaseManager {
 
     getPlayers(requestRole, callback) {
         const query = 'SELECT Players.*, Teams.name as team, Dragons.name as dragon, ' +
+            'CField.name as current_field_name, NField.name as next_field_name, ' +
             'SUM(Points.points_efekt) + SUM(Points.points_przygotowanie) + ' +
-            'SUM(Points.points_punktualnosc) + SUM(Points.points_skupienie) + Players.starting_points as xp ' +
+            'SUM(Points.points_punktualnosc) + SUM(Points.points_skupienie) + ' +
+            'Players.starting_points as xp ' +
             'from Players ' +
             'LEFT JOIN Teams ON Teams.id = Players.team_id ' +
             'LEFT JOIN Dragons ON Dragons.id = Players.dragon_id ' +
             'LEFT JOIN Points ON Points.player_id = Players.id ' +
+            'LEFT JOIN (' +
+                'SELECT Fields.*, CONCAT(Teams.name, " ", Regions.name) as name from Fields ' +
+                'INNER JOIN Teams ON Fields.team_id = Teams.id ' +
+                'INNER JOIN Regions ON Fields.region_id = Regions.id) CField ' +
+                'ON CField.id = Players.current_field ' +
+            'LEFT JOIN (' +
+                'SELECT Fields.*, CONCAT(Teams.name, " ", Regions.name) as name from Fields ' +
+                'INNER JOIN Teams ON Fields.team_id = Teams.id ' +
+                'INNER JOIN Regions ON Fields.region_id = Regions.id) NField ' +
+                'ON NField.id = Players.next_field ' +
             `${requestRole === 'admin' ? '' : 'WHERE role = "player"'} ` +
             'GROUP BY Players.id';
 
@@ -344,7 +356,12 @@ export default class DatabaseManager {
     }
 
     getFields(callback) {
-        this.connection.query('SELECT * from Fields', (err, results) => {
+        const query = 'SELECT Fields.*, CONCAT(Teams.name, " ", Regions.name) as name ' +
+            'from Fields ' +
+            'INNER JOIN Teams ON Fields.team_id = Teams.id ' +
+            'INNER JOIN Regions ON Fields.region_id = Regions.id';
+
+        this.connection.query(query, (err, results) => {
             if (err) {
                 console.error(err);
                 callback({ err });

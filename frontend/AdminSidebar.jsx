@@ -26,10 +26,10 @@ export default class AdminSidebar extends Component {
                         Ustaw pola na mapie
                     </Link>
                     <Link
-                        to="/admin/users"
+                        to="/admin/add_user"
                         className="list-group-item sidebar-button"
                     >
-                        Zarządzaj użytkownikami
+                        Dodaj użytkownika
                     </Link>
                     <Link
                         to="/admin/teams"
@@ -54,6 +54,12 @@ export default class AdminSidebar extends Component {
                         className="list-group-item sidebar-button"
                     >
                         Zarządzaj smokami
+                    </Link>
+                    <Link
+                        to="/admin/users"
+                        className="list-group-item sidebar-button"
+                    >
+                        Zarządzaj użytkownikami
                     </Link>
                 </ul>
             </div>

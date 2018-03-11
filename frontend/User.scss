@@ -49,3 +49,11 @@ $user-tab-height: $user-navbar-height - 10;
     border-bottom-width: 0;
   }
 }
+
+.user-list-container {
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  @media screen and (max-width: 1300px) {
+    word-break: break-all;
+  }
+}
