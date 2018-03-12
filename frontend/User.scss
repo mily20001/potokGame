@@ -56,4 +56,13 @@ $user-tab-height: $user-navbar-height - 10;
   @media screen and (max-width: 1300px) {
     word-break: break-all;
   }
+
+  & select {
+    min-width: 200px;
+  }
+
+  & input[type=number] {
+    min-width: 75px;
+  }
+
 }

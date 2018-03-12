@@ -488,9 +488,20 @@ export default class DatabaseManager {
         }
     }
 
-    addPlayer({ username, password, name, surname, role, dragon_id, team_id, id }, callback) {
+    addPlayer({ username, password, name, surname, role, dragon_id, team_id, current_field,
+                  next_field, starting_points, id }, callback) {
         const hash = (password !== undefined) ? bcrypt.hashSync(password, 11) : undefined;
-        const user = { username, password: hash, name, surname, role, dragon_id, team_id };
+        const user = { username,
+            password: hash,
+            name,
+            surname,
+            role,
+            dragon_id,
+            team_id,
+            current_field,
+            next_field,
+            starting_points,
+        };
 
         /* eslint camelcase: "warn" */
         let query;

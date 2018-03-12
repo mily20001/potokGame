@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import Popup from 'react-popup';
+import { NotificationManager } from 'react-notifications';
 
 import './User.scss';
 
@@ -9,9 +10,13 @@ export default class UserList extends Component {
         super();
         this.state = {
             editedRow: undefined,
+            editedColumns: {},
         };
 
         this.editUser = this.editUser.bind(this);
+        this.handleField = this.handleField.bind(this);
+        this.cancelEdit = this.cancelEdit.bind(this);
+        this.saveEdit = this.saveEdit.bind(this);
     }
 
     deleteUser(userId) {
@@ -56,9 +61,62 @@ export default class UserList extends Component {
         if (this.props.editUser && typeof this.props.editUser === 'function') {
             this.props.editUser(this.props.databaseObjects.users[id]);
         } else {
-            this.setState({ ...this.props.databaseObjects.users[id] });
-            this.setState({ editedRow: id });
+            const user = this.props.databaseObjects.users[id];
+
+            const filteredUser = Object.keys(user).reduce((tmpUser, key) => {
+                if (user[key] === null || user[key] === undefined) {
+                    return { ...tmpUser, [key]: undefined };
+                    // return tmpUser;
+                }
+                return { ...tmpUser, [key]: user[key] };
+            }, {});
+
+            this.setState({ ...filteredUser, editedColumns: {}, editedRow: id });
         }
+    }
+
+    cancelEdit(id) {
+        if (this.state.editedRow === id) {
+            this.setState({ editedRow: undefined, editedColumns: {} });
+        }
+    }
+
+    handleField(fieldId, newVal) {
+        const editedColumns = { ...this.state.editedColumns };
+        editedColumns[fieldId] = 1;
+        this.setState({ [fieldId]: newVal, editedColumns });
+    }
+
+    saveEdit(id) {
+        if (this.state.editedRow !== id) {
+            return;
+        }
+
+        const data = new FormData();
+
+        Object.keys(this.state.editedColumns).forEach((key) => {
+            data.append(key, this.state[key]);
+        });
+
+        data.append('id', this.state.id);
+
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', '/add_user', true);
+        xhr.onload = () => {
+            try {
+                const uploadResponse = JSON.parse(xhr.responseText);
+                if (uploadResponse.ok !== undefined) {
+                    NotificationManager.success('Zmiany zapisane');
+                    this.props.databaseObjects.refreshDatabase('users');
+                    this.cancelEdit(id);
+                } else {
+                    NotificationManager.error('Nie udało się edytować użytkownika', 'Błąd', 5000);
+                }
+            } catch (e) {
+                NotificationManager.error('Nie udało się edytować użytkownika', 'Błąd', 5000);
+            }
+        };
+        xhr.send(data);
     }
 
     prepareForm(tableFields) {
@@ -101,12 +159,11 @@ export default class UserList extends Component {
             hp: { type: 'number' },
         };
 
-        this.fieldsArr = Object.keys(fields);
+        this.fieldsArr = Object.keys(fields).map(key => fields[key].id || key);
 
         return tableFields.map((fieldName) => {
             const fieldId = (fields[fieldName] && fields[fieldName].id) || fieldName;
             const field = fields[fieldName];
-
             // console.log(fieldName, fieldId, field);
 
             if (field === undefined) {
@@ -124,7 +181,7 @@ export default class UserList extends Component {
                 ));
 
                 if (field.placeholder !== undefined) {
-                    options.push(<option value="" disabled hidden>{field.placeholder}</option>);
+                    options.push(<option value="" disabled selected>{field.placeholder}</option>);
                 }
 
                 return (
@@ -132,8 +189,8 @@ export default class UserList extends Component {
                         <select
                             className="form-control bg-dark text-white"
                             id={fieldId}
-                            onChange={e => this.handleField(fieldName, e)}
-                            value={this.state[fieldName]}
+                            onChange={e => this.handleField(fieldId, e.target.value)}
+                            value={this.state[fieldId]}
                         >
                             {options}
                         </select>
@@ -147,8 +204,8 @@ export default class UserList extends Component {
                         className="form-control bg-dark text-white"
                         id={fieldName}
                         name={fieldName}
-                        onChange={e => this.handleField(fieldName, e)}
-                        value={this.state[fieldName]}
+                        onChange={e => this.handleField(fieldId, e.target.value)}
+                        value={this.state[fieldId]}
                         placeholder={field.placeholder}
                     />
                 </td>
@@ -202,10 +259,7 @@ export default class UserList extends Component {
 
             const isEdited = this.state.editedRow === key;
 
-            console.log('isEdited', isEdited);
-
             if (isEdited) {
-                console.log(this.state);
                 columns = this.prepareForm(fields);
             } else {
                 columns = fields.map((field) => {
@@ -239,6 +293,29 @@ export default class UserList extends Component {
                         onClick={() => this.deleteUser(key)}
                     >
                         <i className="fa fa-trash" />
+                    </td>);
+            }
+
+            if (isEdited) {
+                columns.push(
+                    <td
+                        className="text-center"
+                        onClick={() => this.saveEdit(key)}
+                    >
+                        <i className="fa fa-check" />
+                    </td>);
+
+                columns.push(
+                    <td style={{ textAlign: 'center' }}>
+                        <i className="fa fa-minus" />
+                    </td>);
+
+                columns.push(
+                    <td
+                        className="text-center"
+                        onClick={() => this.cancelEdit(key)}
+                    >
+                        <i className="fa fa-times" />
                     </td>);
             }
 
