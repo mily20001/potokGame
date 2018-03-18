@@ -25,6 +25,7 @@ export default class Main extends Component {
             databaseObjects: {
                 getImage: this.getImage.bind(this),
                 refreshDatabase: this.refreshDatabase.bind(this),
+                refreshCurrentUser: this.refreshCurrentUser.bind(this),
                 logout: this.logout.bind(this),
             },
         };
@@ -56,6 +57,11 @@ export default class Main extends Component {
             }
         };
         xhr.send();
+    }
+
+    refreshCurrentUser() {
+        this.redirectPath = window.location.pathname;
+        this.getUser();
     }
 
     getUser() {

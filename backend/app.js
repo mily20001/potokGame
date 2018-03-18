@@ -596,7 +596,12 @@ const server = http.createServer((req, res) => {
                 } else if (req.url === '/add_user') {
                     console.log(fields);
                     databaseManager.getUserFromCookie(cookies.token, (result) => {
-                        if (result.err !== undefined || result.user === undefined || result.user.role !== 'admin') {
+                        if (result.err !== undefined || result.user === undefined ||
+                            (result.user.role !== 'admin' &&
+                                (fields.id === undefined ||
+                                    result.user.id !== parseInt(fields.id[0], 10))
+                            )
+                        ) {
                             res.writeHead(403);
                             res.end();
                         } else if (

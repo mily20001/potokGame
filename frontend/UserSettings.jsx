@@ -44,38 +44,38 @@ export default class UserSettings extends Component {
             return;
         }
 
-        return;
-
         const data = new FormData();
 
-        this.fieldsArr.forEach((key) => {
-            console.log(key, this.state[key], this.cleanState[key], this.props.currentUser[key]);
-            if ((this.state[key] !== this.cleanState[key] || key === 'role') && this.props.currentUser[key] !== this.state[key]) {
-                data.append(key, this.state[key]);
-            }
-        });
-
-        console.log('editing:', this.state.editingUser);
-
-        if (this.state.editingUser) {
-            data.append('id', this.state.id);
+        if (this.state.usernameField.length > 0
+            && this.state.usernameField !== this.props.currentUser.username) {
+            data.append('username', this.state.usernameField);
         }
+
+        if (this.state.passwordField !== '') {
+            data.append('password', this.state.passwordField);
+        }
+
+        data.append('id', this.props.currentUser.id);
 
         const xhr = new XMLHttpRequest();
         xhr.open('POST', '/add_user', true);
         xhr.onload = () => {
             console.log(xhr.responseText);
-            const uploadResponse = JSON.parse(xhr.responseText);
-            if (uploadResponse.ok !== undefined) {
-                this.setState({ status: 0 });
-                this.props.databaseObjects.refreshDatabase('users');
-                // this.props.finishEdit();
-            } else {
-                this.setState({ status: 3 });
+            try {
+                const uploadResponse = JSON.parse(xhr.responseText);
+                if (uploadResponse.ok !== undefined) {
+                    this.props.databaseObjects.refreshDatabase('users');
+                    this.props.databaseObjects.refreshCurrentUser();
+                    NotificationManager.success('Zapisano zmiany');
+                    this.clearState();
+                } else {
+                    NotificationManager.error('Nie udało się zapisać zmian', 'Błąd');
+                }
+            } catch (er) {
+                NotificationManager.error('Nie udało się zapisać zmian', 'Błąd');
             }
         };
         xhr.send(data);
-        this.setState({ status: -1 });
     }
 
     generateFields() {
@@ -102,7 +102,6 @@ export default class UserSettings extends Component {
     }
 
     render() {
-        this.prepareForm();
         return (
             <div className="container bg-dark text-light">
                 <h2 className="text-center">
@@ -129,7 +128,7 @@ export default class UserSettings extends Component {
                         </div>
                         <div className="col-sm-8">
                             <input
-                                type="text"
+                                type="password"
                                 className="form-control bg-dark text-white"
                                 value={this.state.passwordField}
                                 onChange={e => this.handleField('passwordField', e)}
@@ -143,7 +142,7 @@ export default class UserSettings extends Component {
                         </div>
                         <div className="col-sm-8">
                             <input
-                                type="text"
+                                type="password"
                                 className="form-control bg-dark text-white"
                                 value={this.state.passwordField2}
                                 onChange={e => this.handleField('passwordField2', e)}
