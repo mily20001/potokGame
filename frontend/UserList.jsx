@@ -159,8 +159,6 @@ export default class UserList extends Component {
             hp: { type: 'number' },
         };
 
-        this.fieldsArr = Object.keys(fields).map(key => fields[key].id || key);
-
         return tableFields.map((fieldName) => {
             const fieldId = (fields[fieldName] && fields[fieldName].id) || fieldName;
             const field = fields[fieldName];

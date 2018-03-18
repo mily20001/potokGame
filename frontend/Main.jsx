@@ -6,7 +6,7 @@ import {
 } from 'react-router-dom';
 import createBrowserHistory from 'history/createBrowserHistory';
 import Popup from 'react-popup';
-import {NotificationContainer} from 'react-notifications';
+import {NotificationContainer, NotificationManager} from 'react-notifications';
 
 import 'react-notifications/lib/notifications.css';
 
@@ -25,6 +25,7 @@ export default class Main extends Component {
             databaseObjects: {
                 getImage: this.getImage.bind(this),
                 refreshDatabase: this.refreshDatabase.bind(this),
+                logout: this.logout.bind(this),
             },
         };
 
@@ -40,6 +41,21 @@ export default class Main extends Component {
         this.getImage = this.getImage.bind(this);
 
         this.getUser();
+    }
+
+    logout() {
+        const xhr = new XMLHttpRequest();
+        xhr.open('GET', '/logout', true);
+        xhr.onload = () => {
+            const result = JSON.parse(xhr.responseText);
+            if (result.ok !== undefined) {
+                NotificationManager.success('Wylogowano');
+                this.setUser({});
+            } else {
+                NotificationManager.error('Wylogowanie nie powiodło się');
+            }
+        };
+        xhr.send();
     }
 
     getUser() {

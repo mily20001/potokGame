@@ -53,7 +53,13 @@ export default function UserNavbar(props) {
                 {tabs}
             </div>
 
-            Witaj {props.username}!
+            <div className="user-name-container">
+                Witaj {props.username}!
+                <Link to="/user/settings">
+                    <i className="fa fa-cog" />
+                </Link>
+                <i onClick={props.logout} className="fa fa-power-off" />
+            </div>
         </div>
     );
 }
@@ -61,4 +67,5 @@ export default function UserNavbar(props) {
 UserNavbar.propTypes = {
     username: PropTypes.string.isRequired,
     width: PropTypes.number.isRequired,
+    logout: PropTypes.func.isRequired,
 };

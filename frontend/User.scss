@@ -47,6 +47,7 @@ $user-tab-height: $user-navbar-height - 10;
   &:hover:not(.active) {
     background-color: #24282d;
     border-bottom-width: 0;
+    text-decoration: none;
   }
 }
 
@@ -65,4 +66,24 @@ $user-tab-height: $user-navbar-height - 10;
     min-width: 75px;
   }
 
+}
+
+.user-name-container {
+  line-height: 18px;
+  vertical-align: center;
+
+  & i {
+    font-size: 20px;
+    margin-left: 10px;
+    cursor: pointer;
+    padding: 5px;
+  }
+
+  & i:hover {
+    background-color: rgba(0, 0, 0, 0.2);
+  }
+
+  & a {
+    color: white;
+  }
 }

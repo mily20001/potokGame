@@ -13,7 +13,8 @@ import UserWelcomePage from './UserWelcomePage';
 import UserNavbar from './UserNavbar';
 
 import './User.scss';
-import UserList from "./UserList";
+import UserList from './UserList';
+import UserSettings from './UserSettings';
 
 export default class User extends Component {
     constructor() {
@@ -29,9 +30,9 @@ export default class User extends Component {
         return (
             <div className="bg-dark text-white fullpage-container">
                 <UserNavbar
-                    toggleSidebar={this.toggleSidebar}
                     width={this.state.width}
                     username={this.props.user.name}
+                    logout={this.props.databaseObjects.logout}
                 />
                 <div className="user-main-container">
                     <Switch>
@@ -64,6 +65,17 @@ export default class User extends Component {
                             render={() =>
                                 (<div className="container">
                                     <UserList databaseObjects={this.props.databaseObjects} />
+                                </div>)
+                            }
+                        />
+                        <Route
+                            path="/user/settings"
+                            render={() =>
+                                (<div className="container">
+                                    <UserSettings
+                                        databaseObjects={this.props.databaseObjects}
+                                        currentUser={this.props.user}
+                                    />
                                 </div>)
                             }
                         />

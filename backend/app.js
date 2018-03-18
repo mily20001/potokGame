@@ -179,6 +179,39 @@ const server = http.createServer((req, res) => {
                     });
                 }
             });
+        } else if (req.url === '/logout') {
+            databaseManager.getUserFromCookie(cookies.token, (result) => {
+                if (result.err !== undefined || result.user === undefined) {
+                    res.writeHead(403);
+                    res.end();
+                } else {
+                    databaseManager.logoutCurrent(cookies.token, (result2) => {
+                        if (result2.ok !== undefined) {
+                            res.end(JSON.stringify({ ok: 'ok' }));
+                        } else {
+                            res.writeHead(500);
+                            res.end(JSON.stringify({ err: 'err' }));
+                        }
+                    });
+                }
+            });
+        } else if (req.url === '/logout_all') {
+            databaseManager.getUserFromCookie(cookies.token, (result) => {
+                if (result.err !== undefined || result.user === undefined) {
+                    res.writeHead(403);
+                    res.end();
+                } else {
+                    databaseManager.logoutAllButCurrent(result.user.id, cookies.token,
+                        (result2) => {
+                            if (result2.ok !== undefined) {
+                                res.end(JSON.stringify({ ok: 'ok' }));
+                            } else {
+                                res.writeHead(500);
+                                res.end(JSON.stringify({ err: 'err' }));
+                            }
+                        });
+                }
+            });
         } else if (req.url.substr(0, '/get_image'.length) === '/get_image') {
             databaseManager.getUserFromCookie(cookies.token, (result) => {
                 if (result.err !== undefined || result.user === undefined) {

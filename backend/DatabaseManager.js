@@ -778,8 +778,43 @@ export default class DatabaseManager {
         });
     }
 
+    getUserFromId(id, callback) {
+        const query = 'SELECT Players.*, Teams.name as team, Dragons.name as dragon, ' +
+            'CField.name as current_field_name, NField.name as next_field_name, ' +
+            'SUM(Points.points_efekt) + SUM(Points.points_przygotowanie) + ' +
+            'SUM(Points.points_punktualnosc) + SUM(Points.points_skupienie) + ' +
+            'Players.starting_points as xp, Logins.login_count ' +
+            'from Players ' +
+            'LEFT JOIN Teams ON Teams.id = Players.team_id ' +
+            'LEFT JOIN Dragons ON Dragons.id = Players.dragon_id ' +
+            'LEFT JOIN Points ON Points.player_id = Players.id ' +
+            'LEFT JOIN (' +
+            'SELECT Fields.*, CONCAT(Teams.name, " ", Regions.name) as name from Fields ' +
+            'INNER JOIN Teams ON Fields.team_id = Teams.id ' +
+            'INNER JOIN Regions ON Fields.region_id = Regions.id) CField ' +
+            'ON CField.id = Players.current_field ' +
+            'LEFT JOIN (' +
+            'SELECT Fields.*, CONCAT(Teams.name, " ", Regions.name) as name from Fields ' +
+            'INNER JOIN Teams ON Fields.team_id = Teams.id ' +
+            'INNER JOIN Regions ON Fields.region_id = Regions.id) NField ' +
+            'ON NField.id = Players.next_field ' +
+            'INNER JOIN (' +
+            'SELECT COUNT(cookie) as login_count, user FROM Cookies GROUP BY user) Logins ' +
+            'ON Logins.user = Players.id ' +
+            `WHERE Players.id=${mysql.escape(id)}`;
+
+        this.connection.query(query, (err, results) => {
+            if (err || results.length !== 1) {
+                callback({ err: 'err' });
+                return;
+            }
+
+            callback({ user: results[0] });
+        });
+    }
+
     login(username, password, callback) {
-        this.connection.query(`SELECT * from Players WHERE username = ${mysql.escape(username)}`, (err, results) => {
+        this.connection.query(`SELECT id, password from Players WHERE username = ${mysql.escape(username)}`, (err, results) => {
             if (err) {
                 console.error(err);
                 callback({ err });
@@ -827,9 +862,16 @@ export default class DatabaseManager {
                             return;
                         }
 
-                        const loggedUser = { ...results[0], password: undefined };
+                        this.getUserFromId(results[0].id, (res5) => {
+                            if (res5.err) {
+                                callback({ err: 'err' });
+                                return;
+                            }
 
-                        callback({ token, user: loggedUser });
+                            const loggedUser = { ...res5.user, password: undefined };
+
+                            callback({ token, user: loggedUser });
+                        });
                     });
                 });
             });
@@ -837,7 +879,7 @@ export default class DatabaseManager {
     }
 
     getUserFromCookie(cookie, callback) {
-        this.connection.query('SELECT Players.* FROM Players INNER JOIN Cookies ON ' +
+        this.connection.query('SELECT Players.id FROM Players INNER JOIN Cookies ON ' +
             `Cookies.user = Players.id WHERE Cookies.cookie = ${mysql.escape(cookie)}`,
             (err, results) => {
                 if (err) {
@@ -855,11 +897,40 @@ export default class DatabaseManager {
                     return;
                 }
 
-                const loggedUser = { ...results[0], password: undefined };
+                this.getUserFromId(results[0].id, (res5) => {
+                    if (res5.err !== undefined) {
+                        callback({ err: 'err' });
+                        return;
+                    }
 
-                // console.log(loggedUser);
-                callback({ user: loggedUser });
+                    const loggedUser = { ...res5.user, password: undefined };
+
+                    callback({ user: loggedUser });
+                });
             });
+    }
+
+    logoutCurrent(cookie, callback) {
+        this.connection.query(`DELETE FROM Cookies WHERE cookie = ${mysql.escape(cookie)}`, (err) => {
+            if (err) {
+                callback({ err: 'err' });
+            } else {
+                callback({ ok: 'ok' });
+            }
+        });
+    }
+
+    logoutAllButCurrent(id, cookie, callback) {
+        const query = `DELETE FROM Cookies WHERE (id = ${mysql.escape(id)}
+        AND cookie <> ${mysql.escape(cookie)})`;
+
+        this.connection.query(query, (err) => {
+            if (err) {
+                callback({ err: 'err' });
+            } else {
+                callback({ ok: 'ok' });
+            }
+        });
     }
 
     uploadImage(image, type, filename, dataType, callback) {
