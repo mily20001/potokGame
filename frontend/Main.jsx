@@ -166,11 +166,13 @@ export default class Main extends Component {
             if (Object.keys(user).length === 0) {
                 this.history.push('/login');
             } else if (user.role === 'admin') {
+                this.history.push('/loading');
                 const destAddr = (this.redirectPath === '/' || this.redirectPath === '/loading' || this.redirectPath === '/login')
                     ? '/admin' : this.redirectPath;
 
                 this.getAdminDatabaseObjects().then(() => this.history.push(destAddr));
             } else if (user.role === 'player') {
+                this.history.push('/loading');
                 const destAddr = (this.redirectPath === '/' || this.redirectPath === '/loading' || this.redirectPath === '/login')
                     ? '/user' : this.redirectPath;
 

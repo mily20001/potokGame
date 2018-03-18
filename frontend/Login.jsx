@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
+import { NotificationManager } from 'react-notifications';
 
 import './Login.scss';
 import errorCodes from './../backend/errorCodes';
@@ -51,15 +52,21 @@ export default class Login extends Component {
         xhr.open('POST', '/login', true);
         xhr.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
         xhr.onload = () => {
-            this.setState({ username: '', password: '' });
             // console.log(xhr.responseText);
-            const result = JSON.parse(xhr.responseText);
-            // console.log(result);
-            if (result.err !== undefined) {
-                this.setState({ loginError: result.err });
-            } else {
-                this.setState({ loginError: -1 });
-                this.props.setUser(result.user);
+            try {
+                const result = JSON.parse(xhr.responseText);
+                // console.log(result);
+                if (result.err !== undefined) {
+                    this.setState({ loginError: result.err });
+                    this.setState({ username: '', password: '' });
+                } else {
+                    this.setState({ loginError: -1 });
+                    NotificationManager.success('Zalogowano');
+                    this.props.setUser(result.user);
+                }
+            } catch (err) {
+                this.setState({ username: '', password: '' });
+                NotificationManager.error('Logowanie nie powiodło się');
             }
         };
         xhr.send(requestString);
