@@ -14,3 +14,4 @@ backend/config.js
 build/frontend/index.html
 build/frontend/notification.*
 package-lock.json
+build/resources

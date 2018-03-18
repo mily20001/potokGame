@@ -5,7 +5,7 @@ import './FileUploader.scss';
 
 export default class FileUploader extends Component {
     constructor(props) {
-        super(props);
+        super();
 
         this.state = {
             filename: '',
@@ -18,9 +18,9 @@ export default class FileUploader extends Component {
 
         this.imageTypes = ['map', 'dragon'];
 
-        this.fixedImageType = this.imageTypes.includes(this.props.imageType);
+        this.fixedImageType = this.imageTypes.includes(props.imageType);
 
-        this.state.imageType = this.fixedImageType ? this.props.imageType : this.imageTypes[0];
+        this.state.imageType = this.fixedImageType ? props.imageType : this.imageTypes[0];
 
         this.handleField = this.handleField.bind(this);
         this.handleSubmit = this.handleSubmit.bind(this);
@@ -83,6 +83,7 @@ export default class FileUploader extends Component {
             const uploadResponse = JSON.parse(xhr.responseText);
             if (uploadResponse.ok !== undefined) {
                 this.setState({ uploadStatus: 1 });
+                this.props.refreshImageList();
             } else {
                 this.setState({ uploadStatus: 2 });
             }
@@ -204,10 +205,12 @@ FileUploader.propTypes = {
     imageType: PropTypes.string,
     messageText: PropTypes.string,
     customFileName: PropTypes.bool,
+    refreshImageList: PropTypes.func,
 };
 
 FileUploader.defaultProps = {
     messageText: 'Wyślij plik',
     customFileName: false,
     imageType: '',
+    refreshImageList: () => {},
 };

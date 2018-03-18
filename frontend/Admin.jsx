@@ -89,12 +89,18 @@ export default class Admin extends Component {
                         <Route exact path="/admin" component={AdminWelcomePage} />
                         <Route
                             path="/admin/map/upload"
-                            render={() => <FileUploader customFileName />}
+                            render={() => (<FileUploader
+                                customFileName
+                                refreshImageList={() =>
+                                    this.props.databaseObjects.refreshDatabase('images')}
+                            />)}
                         />
                         <Route
                             exact
                             path="/admin/map"
-                            component={AdminMapManager}
+                            render={() =>
+                                <AdminMapManager databaseObjects={this.props.databaseObjects} />
+                            }
                         />
                         <Route
                             path="/admin/add_user"

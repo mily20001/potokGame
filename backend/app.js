@@ -1,6 +1,7 @@
 import http from 'http';
 import fs from 'fs';
 import qs from 'qs';
+import mv from 'mv';
 import multiparty from 'multiparty';
 
 import CONFIG from './config';
@@ -223,7 +224,16 @@ const server = http.createServer((req, res) => {
                 } else {
                     const imageId = req.url.split('?')[1].split('=')[1];
                     databaseManager.getImage(imageId, (result2) => {
-                        if (result2.data !== undefined) {
+                        if (result2.map === true) {
+                            res.writeHead(200, { 'Content-Type': result2.dataType.slice(5) });
+                            try {
+                                res.end(fs.readFileSync('resources/map.image'));
+                            } catch (err) {
+                                console.warn('error while getting map:', err);
+                                res.writeHead(404);
+                                res.end(JSON.stringify({ err: 'err' }));
+                            }
+                        } else if (result2.data !== undefined) {
                             res.end(JSON.stringify({
                                 id: imageId,
                                 data: result2.data,
@@ -572,17 +582,40 @@ const server = http.createServer((req, res) => {
                             && fields.dataType !== undefined
                             && ['map', 'dragon'].includes(fields.imageType[0])
                         ) {
-                            const image = fs.readFileSync(files.image[0].path);
-                            databaseManager.uploadImage(image, fields.imageType,
-                                fields.filename, fields.dataType, (result2) => {
-                                    if (result2.err === undefined && result2.id !== undefined) {
-                                        res.writeHead(200);
-                                        res.end(JSON.stringify({ ok: 'ok' }));
-                                    } else {
+                            if (fields.imageType[0] !== 'map') {
+                                const image = fs.readFileSync(files.image[0].path);
+                                databaseManager.uploadImage(image, fields.imageType,
+                                    fields.filename, fields.dataType, (result2) => {
+                                        if (result2.err === undefined && result2.id !== undefined) {
+                                            res.writeHead(200);
+                                            res.end(JSON.stringify({ ok: 'ok' }));
+                                        } else {
+                                            res.writeHead(500);
+                                            res.end(JSON.stringify({ err: 'err' }));
+                                        }
+                                    });
+                            } else {
+                                console.log('adding map');
+                                mv(files.image[0].path, 'resources/map.image', { mkdirp: true }, (err) => {
+                                    if (err) {
                                         res.writeHead(500);
-                                        res.end(JSON.stringify({ err: 'err' }));
+                                        res.end();
+                                    } else {
+                                        databaseManager.uploadImage('', fields.imageType,
+                                            fields.filename, fields.dataType, (result2) => {
+                                                if (result2.err === undefined &&
+                                                    result2.id !== undefined
+                                                ) {
+                                                    res.writeHead(200);
+                                                    res.end(JSON.stringify({ ok: 'ok' }));
+                                                } else {
+                                                    res.writeHead(500);
+                                                    res.end(JSON.stringify({ err: 'err' }));
+                                                }
+                                            });
                                     }
                                 });
+                            }
                         } else {
                             res.writeHead(400);
                             res.end(JSON.stringify({ err: 'err' }));

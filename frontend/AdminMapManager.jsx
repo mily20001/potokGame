@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 
 import MapFieldComponent from './MapFieldComponent';
+import MapComponent from "./MapComponent";
 
 export default class AdminMapManager extends Component {
     constructor(props) {
@@ -41,7 +42,7 @@ export default class AdminMapManager extends Component {
                     teamColor="red"
                     regionName="niceRegion"
                     distance={2}
-                    scale={1}
+                    scale={0.1}
                     fieldId={12}
                     isFortress={false}
                     positionX={400}
@@ -57,7 +58,7 @@ export default class AdminMapManager extends Component {
                     teamColor="green"
                     regionName="niceRegion"
                     distance={3}
-                    scale={0.3}
+                    scale={0.2}
                     fieldId={11}
                     isFortress={false}
                     positionX={400}
@@ -68,12 +69,13 @@ export default class AdminMapManager extends Component {
                     isMovable
                     move={(x, y) => this.move(11, x, y)}
                 />
+
+                <MapComponent databaseObjects={this.props.databaseObjects} />
             </div>
         );
     }
 }
-//
-// AdminMapManager.propTypes = {
-//     status: PropTypes.bool.isRequired,
-//     sidebarWidth: PropTypes.number.isRequired,
-// };
+
+AdminMapManager.propTypes = {
+    databaseObjects: PropTypes.object.isRequired,
+};

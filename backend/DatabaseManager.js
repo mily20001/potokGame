@@ -419,8 +419,11 @@ export default class DatabaseManager {
                 return;
             }
 
-            // console.log(teams);
-            callback({ data: results[0].data, dataType: results[0].data_type });
+            if (results[0].type === 'map') {
+                callback({ map: true, dataType: results[0].data_type });
+            } else {
+                callback({ data: results[0].data, dataType: results[0].data_type });
+            }
         });
     }
 
@@ -947,11 +950,13 @@ export default class DatabaseManager {
 
             const newImageId = results.insertId;
 
-            if (type !== 'map') {
-                console.log(`Added new image with id: ${newImageId}`);
+            if (type.toString() !== 'map') {
+                console.log(`Added new image with id: ${newImageId} and type ${type}`);
                 callback({ id: newImageId });
                 return;
             }
+
+            console.log('Removing old maps');
 
             this.connection.query(`DELETE FROM Images WHERE type='map' AND id <> ${newImageId}`, (err2) => {
                 if (err2) {
@@ -960,7 +965,7 @@ export default class DatabaseManager {
                     return;
                 }
 
-                console.log(`Added new image with id: ${newImageId}`);
+                console.log(`Added new image with id: ${newImageId} and type ${type}`);
                 callback({ id: newImageId });
             });
         });

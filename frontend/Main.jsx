@@ -6,7 +6,7 @@ import {
 } from 'react-router-dom';
 import createBrowserHistory from 'history/createBrowserHistory';
 import Popup from 'react-popup';
-import {NotificationContainer, NotificationManager} from 'react-notifications';
+import { NotificationContainer, NotificationManager } from 'react-notifications';
 
 import 'react-notifications/lib/notifications.css';
 
@@ -106,7 +106,7 @@ export default class Main extends Component {
     // TODO maybe switch to browser storage
     getImage(imageId, callback) {
         if (this.imageCache[imageId] !== undefined) {
-            if(this.imageCache[imageId].status === 'loading') {
+            if (this.imageCache[imageId].status === 'loading') {
                 // TODO maybe add some callback queue instead
                 setTimeout(this.getImage, 50, imageId, callback);
                 return;
@@ -114,16 +114,15 @@ export default class Main extends Component {
 
             callback(
                 this.imageCache[imageId].data,
-                this.state.databaseObjects.images[imageId].dataType,
-            );
+                this.state.databaseObjects.images[imageId].dataType);
         } else {
-            this.imageCache[imageId] = {status: 'loading'};
+            this.imageCache[imageId] = { status: 'loading' };
             const xhr = new XMLHttpRequest();
             xhr.open('GET', `/get_image?id=${imageId}`, true);
             xhr.onload = () => {
                 const result = JSON.parse(xhr.responseText);
                 if (result.data !== undefined) {
-                    this.imageCache[result.id] = { data: result.data, status: 'ready'};
+                    this.imageCache[result.id] = { data: result.data, status: 'ready' };
                     callback(result.data, result.dataType);
                 } else {
                     console.log(`error while getting image ${imageId}`);
@@ -192,6 +191,8 @@ export default class Main extends Component {
             this.getDatabaseData('/get_fields', 'fields');
         } else if (dataId === 'dragons') {
             this.getDatabaseData('/get_dragons', 'dragons');
+        } else if (dataId === 'images') {
+            this.getDatabaseData('/get_image_list', 'images');
         }
     }
 
