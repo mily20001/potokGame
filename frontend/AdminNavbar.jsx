@@ -17,7 +17,13 @@ export default function AdminNavbar(props) {
 
             <Link to="/admin" className="navbar-brand text-white">{(props.width < 600) ? 'DotU' : 'Dragons of the Universe'}</Link>
 
-            Witaj {props.username}!
+            <div className="admin-name-container">
+                Witaj {props.username}!
+                <Link to="/admin/settings">
+                    <i className="fa fa-cog" />
+                </Link>
+                <i onClick={props.logout} className="fa fa-power-off" />
+            </div>
         </nav>
     );
 }
@@ -26,4 +32,5 @@ AdminNavbar.propTypes = {
     username: PropTypes.string.isRequired,
     toggleSidebar: PropTypes.func.isRequired,
     width: PropTypes.number.isRequired,
+    logout: PropTypes.func.isRequired,
 };

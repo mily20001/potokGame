@@ -68,6 +68,26 @@ body {
   background-color: #0050a8;
 }
 
+.admin-name-container {
+  line-height: 18px;
+  vertical-align: center;
+
+  & i {
+    font-size: 20px;
+    margin-left: 10px;
+    cursor: pointer;
+    padding: 5px;
+  }
+
+  & i:hover {
+    background-color: rgba(0, 0, 0, 0.2);
+  }
+
+  & a {
+    color: white;
+  }
+}
+
 
 /** popup */
 

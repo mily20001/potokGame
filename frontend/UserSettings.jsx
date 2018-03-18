@@ -79,17 +79,26 @@ export default class UserSettings extends Component {
     }
 
     generateFields() {
-        return [
+        const fields = [
             { id: 'name', label: 'Imię' },
-            { id: 'surname', label: 'Nazwisko' },
-            { id: 'hp', label: 'HP' },
-            { id: 'dragon', label: 'Smok' },
-            { id: 'xp', label: 'XP' },
-            { id: 'team', label: 'Drużyna' },
-            { id: 'current_field_name', label: 'Aktualne pole' },
-            { id: 'next_field_name', label: 'Następne pole' },
-            { id: 'login_count', label: 'Liczba aktywnych zalogowań' },
-        ].map(field => (
+            { id: 'surname', label: 'Nazwisko' }
+        ];
+
+        if (!this.props.isAdmin) {
+            fields.push(
+                { id: 'name', label: 'Imię' },
+                { id: 'surname', label: 'Nazwisko' },
+                { id: 'hp', label: 'HP' },
+                { id: 'dragon', label: 'Smok' },
+                { id: 'xp', label: 'XP' },
+                { id: 'team', label: 'Drużyna' },
+                { id: 'current_field_name', label: 'Aktualne pole' },
+                { id: 'next_field_name', label: 'Następne pole' });
+        }
+
+        fields.push({ id: 'login_count', label: 'Liczba aktywnych zalogowań' });
+
+        return fields.map(field => (
             <div className="row">
                 <div className="col-sm-4">
                     {`${field.label}:`}
@@ -183,4 +192,9 @@ export default class UserSettings extends Component {
 UserSettings.propTypes = {
     currentUser: PropTypes.object.isRequired,
     databaseObjects: PropTypes.object.isRequired,
+    isAdmin: PropTypes.bool,
+};
+
+UserSettings.defaultProps = {
+    isAdmin: false,
 };

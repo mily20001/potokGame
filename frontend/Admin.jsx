@@ -17,6 +17,7 @@ import AdminRegions from './AdminRegions';
 import AdminDragons from './AdminDragons';
 import Page404 from './Page404';
 import UserList from './UserList';
+import UserSettings from './UserSettings';
 
 export default class Admin extends Component {
     constructor() {
@@ -75,6 +76,7 @@ export default class Admin extends Component {
                     toggleSidebar={this.toggleSidebar}
                     width={this.state.width}
                     username={this.props.user.name}
+                    logout={this.props.databaseObjects.logout}
                 />
                 <div className="admin-sidebar-container">
                     <AdminSidebar
@@ -139,6 +141,18 @@ export default class Admin extends Component {
                                     isAdmin
                                     isEditable
                                 />)
+                            }
+                        />
+                        <Route
+                            path="/admin/settings"
+                            render={() =>
+                                (<div className="container">
+                                    <UserSettings
+                                        databaseObjects={this.props.databaseObjects}
+                                        currentUser={this.props.user}
+                                        isAdmin
+                                    />
+                                </div>)
                             }
                         />
                         <Route component={Page404} />
