@@ -66,6 +66,7 @@ export default class MapFieldComponent extends Component {
             display: 'flex',
             flexDirection: this.props.isFortress ? 'row' : 'column',
             userSelect: 'none',
+            zIndex: 10,
         };
 
         console.log(frameStyle.transform);

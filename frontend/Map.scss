@@ -1,0 +1,13 @@
+.map-image {
+  //position: absolute;
+  clip: rect(0px, 800px, 600px, 0px);
+  transform-origin: left top;
+  //width: 800px;
+  //height: 600px;
+}
+
+.map-image-container {
+  width: 800px;
+  height: 600px;
+  overflow: hidden;
+}
