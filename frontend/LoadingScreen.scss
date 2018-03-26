@@ -1,3 +1,5 @@
+@import './Spinner';
+
 .loader-container {
   position: absolute;
   left: 50%;
@@ -6,48 +8,4 @@
   text-align: center;
   font-size: 30px;
   transform: translate(-50%, -50%);
-}
-
-
-.spinner {
-  width: 60px;
-  height: 60px;
-  margin: 40px;
-  display: inline-block;
-  animation: rotate 2.8s infinite ease-in-out, background 2.8s infinite ease-in-out alternate;
-}
-
-@keyframes rotate {
-  0% {
-    transform: perspective(120px) rotateX(0deg) rotateY(0deg);
-  }
-  25% {
-    transform: perspective(120px) rotateX(-180deg) rotateY(0deg);
-  }
-  50% {
-    transform: perspective(120px) rotateX(-180deg) rotateY(-180deg);
-  }
-  75% {
-    transform: perspective(120px) rotateX(-360deg) rotateY(-180deg);
-  }
-  100% {
-    transform: perspective(120px) rotateX(-360deg) rotateY(-360deg);
-  }
-}
-@keyframes background {
-  0% {
-    background-color: #27ae60;
-  }
-  25% {
-    background-color: #0072d5;
-  }
-  50% {
-    background-color: #c0392b;
-  }
-  75% {
-    background-color: #cbc212;
-  }
-  100% {
-    background-color: #bfc0b9;
-  }
 }

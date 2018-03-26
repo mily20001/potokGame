@@ -3,6 +3,8 @@ import PropTypes from 'prop-types';
 import { NotificationManager } from 'react-notifications';
 
 import './Map.scss';
+import MapFieldComponent from './MapFieldComponent';
+import fieldImages from './fieldImages';
 
 export default class MapComponent extends Component {
     constructor(props) {
@@ -13,6 +15,7 @@ export default class MapComponent extends Component {
             mapScale: 1,
             mapImagePath: '',
             noMapFile: false,
+            fieldPositionDeltas: {},
         };
 
         this.windowHeight = 600;
@@ -33,6 +36,7 @@ export default class MapComponent extends Component {
         this.dragStart = this.dragStart.bind(this);
         this.dragContinue = this.dragContinue.bind(this);
         this.handleZoom = this.handleZoom.bind(this);
+        this.moveField = this.moveField.bind(this);
     }
 
     dragContinue(e) {
@@ -44,10 +48,12 @@ export default class MapComponent extends Component {
     }
 
     dragStart(e) {
-        e.preventDefault();
         if (e.buttons !== 1 || e.ctrlKey) {
             return;
         }
+
+        e.preventDefault();
+
         this.initMapDragX = e.clientX;
         this.initMapDragY = e.clientY;
         document.onmousemove = this.dragContinue;
@@ -55,6 +61,21 @@ export default class MapComponent extends Component {
             document.onmouseup = null;
             document.onmousemove = null;
         };
+    }
+
+    moveField(fieldId, dx, dy) {
+        const deltas = { ...this.state.fieldPositionDeltas };
+        if (deltas[fieldId] === undefined) {
+            deltas[fieldId] = {
+                x: 0,
+                y: 0,
+            };
+        }
+
+        deltas[fieldId].x += dx * (1 / this.state.mapScale);
+        deltas[fieldId].y += dy * (1 / this.state.mapScale);
+
+        this.setState({ fieldPositionDeltas: { ...deltas } });
     }
 
     handleZoom(e) {
@@ -67,15 +88,15 @@ export default class MapComponent extends Component {
 
         if (e.deltaY > 0) {
             this.setState({
-                mapScale: this.state.mapScale * 0.9,
-                mapX: this.state.mapX + (centerX * 0.1),
-                mapY: this.state.mapY + (centerY * 0.1),
+                mapScale: this.state.mapScale * 0.85,
+                mapX: this.state.mapX + (centerX * 0.15),
+                mapY: this.state.mapY + (centerY * 0.15),
             });
         } else if (e.deltaY < 0) {
             this.setState({
-                mapScale: this.state.mapScale * 1.1,
-                mapX: this.state.mapX - (centerX * 0.1),
-                mapY: this.state.mapY - (centerY * 0.1),
+                mapScale: this.state.mapScale * 1.15,
+                mapX: this.state.mapX - (centerX * 0.15),
+                mapY: this.state.mapY - (centerY * 0.15),
             });
         }
     }
@@ -96,22 +117,66 @@ export default class MapComponent extends Component {
 
         return (
             <div className="map-main-container">
-                <div className="map-image-container">
+                <div
+                    className="map-image-container"
+                    onMouseDown={this.dragStart}
+                    onWheel={this.handleZoom}
+                >
                     {!this.state.imageReady &&
-                        <div>
-                            {'Ładowanie mapy...'}
+                        <div className="map-image-loader">
+                            <span>{'Ładowanie mapy...'}</span>
+                            <div className="spinner" />
                         </div>
                     }
                     <img
-                        onWheel={this.handleZoom}
                         draggable
                         className="map-image"
                         style={mapStyle}
                         src={this.state.mapImagePath}
                         alt="mapa"
                         onLoad={() => this.setState({ imageReady: true })}
-                        onMouseDown={this.dragStart}
                     />
+
+                    {this.state.imageReady &&
+                        <div>
+                            <MapFieldComponent
+                                teamId={2}
+                                teamColor="red"
+                                regionName="niceRegion"
+                                distance={3}
+                                scale={this.state.mapScale}
+                                fieldId={11}
+                                isFortress={false}
+                                positionX={400 * this.state.mapScale}
+                                positionY={500 * this.state.mapScale}
+                                translationX={this.state.mapX + ((this.state.fieldPositionDeltas[11] && this.state.fieldPositionDeltas[11].x) || 0) * this.state.mapScale}
+                                translationY={this.state.mapY + ((this.state.fieldPositionDeltas[11] && this.state.fieldPositionDeltas[11].y) || 0) * this.state.mapScale}
+                                innerImage={fieldImages.defaultImage}
+                                isMovable
+                                move={(x, y) => {
+                                    this.moveField(11, x, y);
+                                }}
+                            />
+                            <MapFieldComponent
+                                teamId={2}
+                                teamColor="green"
+                                regionName="niceRegion"
+                                distance={5}
+                                scale={this.state.mapScale}
+                                fieldId={12}
+                                isFortress={false}
+                                positionX={600 * this.state.mapScale}
+                                positionY={1000 * this.state.mapScale}
+                                translationX={this.state.mapX + ((this.state.fieldPositionDeltas[12] && this.state.fieldPositionDeltas[12].x) || 0) * this.state.mapScale}
+                                translationY={this.state.mapY + ((this.state.fieldPositionDeltas[12] && this.state.fieldPositionDeltas[12].y) || 0) * this.state.mapScale}
+                                innerImage={fieldImages.defaultImage}
+                                isMovable
+                                move={(x, y) => {
+                                    this.moveField(12, x, y);
+                                }}
+                            />
+                        </div>
+                    }
                 </div>
             </div>
         );

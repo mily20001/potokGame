@@ -20,6 +20,7 @@ export default class MapFieldComponent extends Component {
     }
 
     dragContinue(e) {
+        console.log('DRAGGING FIELD');
         const dx = this.initDragX - e.clientX;
         const dy = this.initDragY - e.clientY;
         this.initDragX = e.clientX;
@@ -28,9 +29,14 @@ export default class MapFieldComponent extends Component {
     }
 
     dragStart(e) {
-        if (e.buttons !== 1 || !e.ctrlKey) {
+        if (e.buttons !== 1) {
             return;
         }
+
+        if (!e.ctrlKey) {
+            return;
+        }
+
         this.initDragX = e.clientX;
         this.initDragY = e.clientY;
         document.onmousemove = this.dragContinue;

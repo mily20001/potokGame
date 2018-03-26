@@ -1,3 +1,5 @@
+@import './Spinner';
+
 .map-image {
   //position: absolute;
   clip: rect(0px, 800px, 600px, 0px);
@@ -10,4 +12,22 @@
   width: 800px;
   height: 600px;
   overflow: hidden;
+  position: absolute;
+  background-color: black;
+  border: 2px solid gold;
+}
+
+.map-image-loader {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 1;
+  text-align: center;
+  font-size: 30px;
+  transform: translate(-50%, -50%);
+  display: flex;
+
+  & span {
+    line-height: 140px;
+  }
 }
