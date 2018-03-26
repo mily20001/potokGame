@@ -13,7 +13,7 @@
     "start-server": "scripts/server.sh",
     "dev-autobuild-frontend": "node_modules/.bin/webpack --hide-modules --watch",
     "build-frontend": "rm -r build/frontend/{css,js}; node_modules/.bin/webpack -p --progress --hide-modules",
-    "deploy": "scp -r build/* $npm_package_config_remoteUserHostPath"
+    "deploy": "rsync -avz --exclude 'resources/' build/ $npm_package_config_remoteUserHostPath"
   },
   "devDependencies": {
     "babel-cli": "^6.26.0",
