@@ -15,6 +15,9 @@ export default class MapComponent extends Component {
             noMapFile: false,
         };
 
+        this.windowHeight = 600;
+        this.windowWidth = 800;
+
         const mapId = Object.keys(props.databaseObjects.images).reduce((result, id) => {
             if (props.databaseObjects.images[id].type === 'map') { return id; }
             return result;
@@ -37,7 +40,7 @@ export default class MapComponent extends Component {
         const dy = this.initMapDragY - e.clientY;
         this.initMapDragX = e.clientX;
         this.initMapDragY = e.clientY;
-        this.setState({mapX: this.state.mapX - dx, mapY: this.state.mapY - dy});
+        this.setState({ mapX: this.state.mapX - dx, mapY: this.state.mapY - dy });
     }
 
     dragStart(e) {
@@ -56,12 +59,25 @@ export default class MapComponent extends Component {
 
     handleZoom(e) {
         e.preventDefault();
-        if(e.deltaY > 0) {
-            this.setState({mapScale: this.state.mapScale * 0.9});
+
+        console.log(this.state.mapX, this.state.mapY);
+
+        const centerX = -this.state.mapX + (this.windowWidth / 2);
+        const centerY = -this.state.mapY + (this.windowHeight / 2);
+
+        if (e.deltaY > 0) {
+            this.setState({
+                mapScale: this.state.mapScale * 0.9,
+                mapX: this.state.mapX + (centerX * 0.1),
+                mapY: this.state.mapY + (centerY * 0.1),
+            });
         } else if (e.deltaY < 0) {
-            this.setState({mapScale: this.state.mapScale * 1.1});
+            this.setState({
+                mapScale: this.state.mapScale * 1.1,
+                mapX: this.state.mapX - (centerX * 0.1),
+                mapY: this.state.mapY - (centerY * 0.1),
+            });
         }
-        // this.setState(e.deltaY)
     }
 
     render() {
@@ -81,6 +97,11 @@ export default class MapComponent extends Component {
         return (
             <div className="map-main-container">
                 <div className="map-image-container">
+                    {!this.state.imageReady &&
+                        <div>
+                            {'Ładowanie mapy...'}
+                        </div>
+                    }
                     <img
                         onWheel={this.handleZoom}
                         draggable
@@ -92,11 +113,6 @@ export default class MapComponent extends Component {
                         onMouseDown={this.dragStart}
                     />
                 </div>
-                {!this.state.imageReady &&
-                    <div>
-                        {'Ładowanie mapy...'}
-                    </div>
-                }
             </div>
         );
     }
