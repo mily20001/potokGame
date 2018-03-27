@@ -356,7 +356,7 @@ export default class DatabaseManager {
     }
 
     getFields(callback) {
-        const query = 'SELECT Fields.*, CONCAT(Teams.name, " ", Regions.name) as name ' +
+        const query = 'SELECT Fields.*, CONCAT(Teams.name, " ", Regions.name) as name, Teams.color, Regions.distance ' +
             'from Fields ' +
             'INNER JOIN Teams ON Fields.team_id = Teams.id ' +
             'INNER JOIN Regions ON Fields.region_id = Regions.id';
@@ -373,6 +373,59 @@ export default class DatabaseManager {
 
             callback({ fields });
         });
+    }
+
+    moveFields(changes, callback) {
+        try {
+            this.connection.beginTransaction((err) => {
+                if (err) {
+                    console.error(err);
+                    callback({ err });
+                    return;
+                }
+
+                const queriesToBeDone = Object.keys(changes).length;
+                let queriesDone = 0;
+                let errorOccured = false;
+
+                Object.keys(changes).forEach((fieldId) => {
+                    if (errorOccured) {
+                        return;
+                    }
+
+                    const query = 'UPDATE Fields SET map_x = ' +
+                        `${mysql.escape(changes[fieldId].map_x)}, ` +
+                        `map_y = ${mysql.escape(changes[fieldId].map_y)} ` +
+                        `WHERE id = ${mysql.escape(fieldId)}`;
+
+                    this.connection.query(query, (error) => {
+                        if (error) {
+                            console.error(error);
+                            errorOccured = true;
+                            this.connection.rollback();
+                            callback({ err: 'err' });
+                            return;
+                        }
+
+                        queriesDone++;
+                        if (queriesToBeDone === queriesDone) {
+                            this.connection.commit((err2) => {
+                                if (err2) {
+                                    console.error(err2);
+                                    callback({ err: 'err' });
+                                    return;
+                                }
+
+                                callback({ ok: 'ok' });
+                            });
+                        }
+                    });
+                });
+            });
+        } catch (e) {
+            console.error(e);
+            callback({ err: 'err' });
+        }
     }
 
     getRegions(callback) {

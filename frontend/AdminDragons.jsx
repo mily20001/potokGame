@@ -2,7 +2,6 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { NotificationManager } from 'react-notifications';
 import Popup from 'react-popup';
-import RandomString from 'randomstring';
 
 import './AdminDragons.scss';
 
