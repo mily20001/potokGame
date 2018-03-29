@@ -37,7 +37,7 @@ export default class AdminMapManager extends Component {
     render() {
         return (
             <div>
-                <MapComponent databaseObjects={this.props.databaseObjects} />
+                <MapComponent databaseObjects={this.props.databaseObjects} isEditable />
             </div>
         );
     }

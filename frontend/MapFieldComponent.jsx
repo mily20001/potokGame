@@ -1,5 +1,8 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
+import { Tooltip } from 'react-tippy';
+
+import 'react-tippy/dist/tippy.css';
 
 export default class MapFieldComponent extends Component {
     constructor(props) {
@@ -20,7 +23,7 @@ export default class MapFieldComponent extends Component {
     }
 
     dragContinue(e) {
-        console.log('DRAGGING FIELD');
+        // console.log('DRAGGING FIELD');
         const dx = this.initDragX - e.clientX;
         const dy = this.initDragY - e.clientY;
         this.initDragX = e.clientX;
@@ -49,7 +52,7 @@ export default class MapFieldComponent extends Component {
     render() {
         const borderWidth = 20;
         const fortressWidth = 340;
-        const fortressHeight = 180;
+        const fortressHeight = 166;
         const baseWidth = 180;
         const baseHeight = 270;
 
@@ -69,34 +72,41 @@ export default class MapFieldComponent extends Component {
             transform: `scale(${this.props.scale}) translate(${this.props.translationX / this.props.scale}px, ${this.props.translationY / this.props.scale}px)`,
             transformOrigin: 'left top',
             backgroundColor: 'black',
-            display: 'flex',
-            flexDirection: this.props.isFortress ? 'row' : 'column',
+            // display: 'flex',
+            // flexDirection: this.props.isFortress ? 'row' : 'column',
             userSelect: 'none',
             zIndex: 10,
         };
 
-        console.log(frameStyle.transform);
+        // console.log(frameStyle.transform);
 
         const imageStyle = {
             width: '100%',
             height: 'auto',
         };
 
+        const fontSizeBase = this.props.isFortress ?
+            (frameHeight - (2 * borderWidth) - 20) / 2 :
+            frameHeight - this.state.imageHeight - (2 * borderWidth);
+
         const detailsStyle = {
             flexGrow: 1,
-            fontSize: `${frameHeight - this.state.imageHeight - (2 * borderWidth) - 5}px`,
-            lineHeight: `${frameHeight - this.state.imageHeight - (2 * borderWidth)}px`,
+            fontSize: `${fontSizeBase - 5}px`,
+            lineHeight: `${fontSizeBase}px`,
             display: 'flex',
+            flexDirection: this.props.isFortress ? 'column' : 'row',
         };
 
         const signStyle = {
             flexGrow: 3,
             textAlign: 'center',
+            paddingTop: this.props.isFortress ? '10px' : 0,
         };
 
         const distanceStyle = {
             flexGrow: 4,
-            fontSize: `${frameHeight - this.state.imageHeight - (2 * borderWidth)}px`,
+            fontSize: `${fontSizeBase}px`,
+            textAlign: this.props.isFortress ? 'center' : 'left',
         };
 
         const fieldOverlayStyle = {
@@ -110,25 +120,42 @@ export default class MapFieldComponent extends Component {
             top: `-${borderWidth}px`,
         };
 
+        const frameContentStyle = {
+            display: 'flex',
+            flexDirection: this.props.isFortress ? 'row' : 'column',
+        };
+
         // console.log(frameHeight, this.state.imageHeight);
 
         return (
-            <div style={frameStyle}>
-                {this.props.isMovable &&
-                    <div style={fieldOverlayStyle} onMouseDown={this.dragStart} />
-                }
-                <div>
-                    <img
-                        style={imageStyle}
-                        onLoad={this.setImageSize}
-                        src={this.props.innerImage}
-                    />
+                <div style={frameStyle}>
+                    <Tooltip
+                        title={this.props.regionName}
+                        position="right"
+                        trigger="mouseenter"
+                        animation="shift"
+                        distance={15}
+                        arrow
+                    >
+                    {this.props.isMovable &&
+                        <div style={fieldOverlayStyle} onMouseDown={this.dragStart} />
+                    }
+
+                    <div className="frame-content" style={frameContentStyle}>
+                        <div>
+                            <img
+                                style={imageStyle}
+                                onLoad={this.setImageSize}
+                                src={this.props.innerImage}
+                            />
+                        </div>
+                        <div style={detailsStyle}>
+                            <i style={signStyle} className="fa fa-map-signs" />
+                            <div style={distanceStyle}>{this.props.distance}</div>
+                        </div>
+                    </div>
+                    </Tooltip>
                 </div>
-                <div style={detailsStyle}>
-                    <i style={signStyle} className="fa fa-map-signs" />
-                    <div style={distanceStyle}>{this.props.distance}</div>
-                </div>
-            </div>
         );
     }
 }

@@ -31,3 +31,11 @@
     line-height: 140px;
   }
 }
+
+.map-manager-buttons {
+  padding-bottom: 15px;
+
+  & button:not(:first-child) {
+    margin-left: 15px;
+  }
+}

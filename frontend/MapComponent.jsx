@@ -152,6 +152,11 @@ export default class MapComponent extends Component {
             display: this.state.imageReady ? undefined : 'none',
         };
 
+        const fieldDistances = Object.keys(this.props.databaseObjects.fields).map(id =>
+            this.props.databaseObjects.fields[id].distance);
+
+        const maxDistance = Math.max(...fieldDistances);
+
         const fields = Object.keys(this.props.databaseObjects.fields).map((id) => {
             const field = this.props.databaseObjects.fields[id];
 
@@ -171,6 +176,8 @@ export default class MapComponent extends Component {
             const translationX = this.state.mapX + (dx * this.state.mapScale);
             const translationY = this.state.mapY + (dy * this.state.mapScale);
 
+            const isFortress = field.distance === maxDistance;
+
             return (
                 <MapFieldComponent
                     teamId={field.team_id}
@@ -178,24 +185,46 @@ export default class MapComponent extends Component {
                     regionName={field.name}
                     distance={field.distance}
                     scale={this.state.mapScale}
-                    fieldId={id}
-                    isFortress={false}
+                    fieldId={parseInt(id, 10)}
                     positionX={field.map_x * this.state.mapScale}
                     positionY={field.map_y * this.state.mapScale}
                     translationX={translationX}
                     translationY={translationY}
-                    innerImage={fieldImages.defaultImage}
+                    innerImage={isFortress ? fieldImages.fortressImage : fieldImages.defaultImage}
                     isMovable
                     move={(x, y) => {
                         this.moveField(id, x, y);
                     }}
+                    isFortress={isFortress}
                 />
             );
         });
 
+        const fieldsMoved = Object.keys(this.state.fieldPositionDeltas).length > 0;
+
         return (
             <div className="map-main-container">
-                <button onClick={this.saveChanges}>Zapisz zmiany</button>
+                {this.props.isEditable &&
+                    <div
+                        className="map-manager-buttons"
+                        style={{
+                            visibility: fieldsMoved ? 'visible' : 'hidden',
+                        }}
+                    >
+                        <button
+                            onClick={this.saveChanges}
+                            className="btn btn-outline-light btn-lg"
+                        >
+                            Zapisz zmiany
+                        </button>
+                        <button
+                            onClick={() => this.setState({ fieldPositionDeltas: {} })}
+                            className="btn btn-outline-light btn-lg"
+                        >
+                            Cofnij zmiany
+                        </button>
+                    </div>
+                }
                 <div
                     className="map-image-container"
                     onMouseDown={this.dragStart}
@@ -229,4 +258,9 @@ export default class MapComponent extends Component {
 
 MapComponent.propTypes = {
     databaseObjects: PropTypes.object.isRequired,
+    isEditable: PropTypes.bool,
+};
+
+MapComponent.defaultProps = {
+    isEditable: false,
 };
