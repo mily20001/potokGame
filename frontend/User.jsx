@@ -15,15 +15,36 @@ import UserNavbar from './UserNavbar';
 import './User.scss';
 import UserList from './UserList';
 import UserSettings from './UserSettings';
+import MapComponent from './MapComponent';
 
 export default class User extends Component {
     constructor() {
         super();
-        this.state = {};
+        this.state = {
+            width: 0,
+        };
+
+        this.updateWindowDimensions = this.updateWindowDimensions.bind(this);
     }
 
     componentDidMount() {
+        this.updateWindowDimensions();
+        window.addEventListener('resize', this.updateWindowDimensions);
         document.title = 'Panel Użytkownika';
+    }
+
+    updateWindowDimensions() {
+        this.setState({ width: window.innerWidth });
+
+        console.log(this.state.width, window.innerWidth);
+
+        if (!this.state.sidebarManualToggled) {
+            if (window.innerWidth < this.sidebarTreshold) {
+                this.setState({ sidebarHidden: true });
+            } else {
+                this.setState({ sidebarHidden: false });
+            }
+        }
     }
 
     render() {
@@ -77,6 +98,13 @@ export default class User extends Component {
                                         currentUser={this.props.user}
                                     />
                                 </div>)
+                            }
+                        />
+                        <Route
+                            exact
+                            path="/user/map"
+                            render={() =>
+                                <MapComponent databaseObjects={this.props.databaseObjects} />
                             }
                         />
                         <Route component={Page404} />

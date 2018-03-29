@@ -1,6 +1,8 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { NotificationManager } from 'react-notifications';
+import Fullscreen from 'react-full-screen';
+import Measure from 'react-measure';
 
 import './Map.scss';
 import MapFieldComponent from './MapFieldComponent';
@@ -16,10 +18,8 @@ export default class MapComponent extends Component {
             mapImagePath: '',
             noMapFile: false,
             fieldPositionDeltas: {},
+            isFullScreen: false,
         };
-
-        this.windowHeight = 600;
-        this.windowWidth = 800;
 
         const mapId = Object.keys(props.databaseObjects.images).reduce((result, id) => {
             if (props.databaseObjects.images[id].type === 'map') { return id; }
@@ -84,8 +84,8 @@ export default class MapComponent extends Component {
 
         console.log(this.state.mapX, this.state.mapY);
 
-        const centerX = -this.state.mapX + (this.windowWidth / 2);
-        const centerY = -this.state.mapY + (this.windowHeight / 2);
+        const centerX = -this.state.mapX + (this.state.dimensions.width / 2);
+        const centerY = -this.state.mapY + (this.state.dimensions.height / 2);
 
         if (e.deltaY > 0) {
             this.setState({
@@ -191,7 +191,7 @@ export default class MapComponent extends Component {
                     translationX={translationX}
                     translationY={translationY}
                     innerImage={isFortress ? fieldImages.fortressImage : fieldImages.defaultImage}
-                    isMovable
+                    isMovable={this.props.isEditable}
                     move={(x, y) => {
                         this.moveField(id, x, y);
                     }}
@@ -201,6 +201,8 @@ export default class MapComponent extends Component {
         });
 
         const fieldsMoved = Object.keys(this.state.fieldPositionDeltas).length > 0;
+
+        // console.log(this.state.dimensions);
 
         return (
             <div className="map-main-container">
@@ -225,32 +227,66 @@ export default class MapComponent extends Component {
                         </button>
                     </div>
                 }
-                <div
-                    className="map-image-container"
-                    onMouseDown={this.dragStart}
-                    onWheel={this.handleZoom}
+                <Measure
+                    bounds
+                    onResize={(contentRect) => {
+                        this.setState({ dimensions: contentRect.bounds });
+                    }}
                 >
-                    {!this.state.imageReady &&
-                        <div className="map-image-loader">
-                            <span>{'Ładowanie mapy...'}</span>
-                            <div className="spinner" />
-                        </div>
-                    }
-                    <img
-                        draggable
-                        className="map-image"
-                        style={mapStyle}
-                        src={this.state.mapImagePath}
-                        alt="mapa"
-                        onLoad={() => this.setState({ imageReady: true })}
-                    />
+                    {({ measureRef }) =>
+                        (<Fullscreen
+                            enabled={this.state.isFullScreen}
+                            onChange={isFullScreen => this.setState({isFullScreen})}
+                        >
+                            <div
+                                className="map-image-container"
+                                onMouseDown={this.dragStart}
+                                onWheel={this.handleZoom}
+                                ref={measureRef}
+                                style={{
+                                    height: this.state.isFullScreen ? '100%' :
+                                        `${window.innerHeight - (this.props.isEditable ? 150 : 90)}px`,
+                                }}
+                            >
+                                {!this.state.imageReady &&
+                                <div className="map-image-loader">
+                                    <span>{'Ładowanie mapy...'}</span>
+                                    <div className="spinner" />
+                                </div>
+                                }
+                                <img
+                                    draggable
+                                    className="map-image"
+                                    style={mapStyle}
+                                    src={this.state.mapImagePath}
+                                    alt="mapa"
+                                    onLoad={() => this.setState({ imageReady: true })}
+                                />
 
-                    {this.state.imageReady &&
-                        <div>
-                            {fields}
-                        </div>
+                                <div className="fullscreen-button">
+                                    <button
+                                        className="btn btn-outline-light btn-lg"
+                                        onClick={() =>
+                                            this.setState({
+                                                isFullScreen: !this.state.isFullScreen,
+                                            })}
+                                    >
+                                        <i
+                                            className={`fa fa-${this.state.isFullScreen ?
+                                                'compress' : 'expand-arrows-alt'}`}
+                                        />
+                                    </button>
+                                </div>
+
+                                {this.state.imageReady &&
+                                <div>
+                                    {fields}
+                                </div>
+                                }
+                            </div>
+                        </Fullscreen>)
                     }
-                </div>
+                </Measure>
             </div>
         );
     }

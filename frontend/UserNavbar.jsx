@@ -24,6 +24,10 @@ export default function UserNavbar(props) {
             title: 'Przegląd graczy',
             href: '/user/players',
         },
+        {
+            title: 'Mapa',
+            href: '/user/map',
+        },
     ];
 
     const tabs = tabList.map((tab) => {
@@ -46,7 +50,7 @@ export default function UserNavbar(props) {
         <div className="navbar user-navbar">
 
             <Link to="/user" className="navbar-brand text-white">
-                {(props.width < 600) ? 'DotU' : 'Dragons of the Universe'}
+                {(props.width < 1100) ? 'DotU' : 'Dragons of the Universe'}
             </Link>
 
             <div className="user-navbar-tab-container">

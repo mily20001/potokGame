@@ -135,6 +135,7 @@ export default class MapFieldComponent extends Component {
                         trigger="mouseenter"
                         animation="shift"
                         distance={15}
+                        theme="transparent"
                         arrow
                     >
                     {this.props.isMovable &&
