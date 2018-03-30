@@ -19,6 +19,7 @@ export default class MapComponent extends Component {
             noMapFile: false,
             fieldPositionDeltas: {},
             isFullScreen: false,
+            fieldScale: parseFloat(props.databaseObjects.config.fieldsScale),
         };
 
         const mapId = Object.keys(props.databaseObjects.images).reduce((result, id) => {
@@ -38,6 +39,15 @@ export default class MapComponent extends Component {
         this.handleZoom = this.handleZoom.bind(this);
         this.moveField = this.moveField.bind(this);
         this.saveChanges = this.saveChanges.bind(this);
+        this.reverseChanges = this.reverseChanges.bind(this);
+    }
+
+    componentWillReceiveProps(nextProps) {
+        if (this.props.databaseObjects.config.fieldsScale !==
+            nextProps.databaseObjects.config.fieldsScale
+        ) {
+            this.setState({ fieldScale: parseFloat(nextProps.databaseObjects.config.fieldsScale) });
+        }
     }
 
     dragContinue(e) {
@@ -102,31 +112,54 @@ export default class MapComponent extends Component {
         }
     }
 
+    reverseChanges() {
+        this.setState({
+            fieldScale: parseFloat(this.props.databaseObjects.config.fieldsScale),
+            fieldPositionDeltas: {},
+        });
+    }
+
     saveChanges() {
-        if (Object.keys(this.state.fieldPositionDeltas).length === 0) {
+        const fieldsMoved = Object.keys(this.state.fieldPositionDeltas).length !== 0;
+        const scaleChanged = parseFloat(this.state.fieldScale) !==
+            parseFloat(this.props.databaseObjects.config.fieldsScale);
+
+        if (!fieldsMoved && !scaleChanged) {
             NotificationManager.info('Brak zmian do zapisania');
             return;
         }
 
         const data = new FormData();
 
-        Object.keys(this.state.fieldPositionDeltas).forEach((fieldId) => {
-            data.append('ids', fieldId);
-            data.append(`${fieldId}_x`, this.state.fieldPositionDeltas[fieldId].x
-                + this.props.databaseObjects.fields[fieldId].map_x);
-            data.append(`${fieldId}_y`, this.state.fieldPositionDeltas[fieldId].y
-                + this.props.databaseObjects.fields[fieldId].map_y);
-        });
+        if (fieldsMoved) {
+            Object.keys(this.state.fieldPositionDeltas).forEach((fieldId) => {
+                data.append('ids', fieldId);
+                data.append(`${fieldId}_x`, this.state.fieldPositionDeltas[fieldId].x
+                    + this.props.databaseObjects.fields[fieldId].map_x);
+                data.append(`${fieldId}_y`, this.state.fieldPositionDeltas[fieldId].y
+                    + this.props.databaseObjects.fields[fieldId].map_y);
+            });
+        } else {
+            data.append('fieldsScale', this.state.fieldScale);
+        }
 
         const xhr = new XMLHttpRequest();
-        xhr.open('POST', '/move_fields', true);
+        xhr.open('POST', fieldsMoved ? '/move_fields' : '/update_config', true);
         xhr.onload = () => {
             console.log(xhr.responseText);
             try {
                 const uploadResponse = JSON.parse(xhr.responseText);
                 if (uploadResponse.ok !== undefined) {
-                    this.props.databaseObjects.refreshDatabase('fields');
-                    this.setState({ fieldPositionDeltas: {} });
+                    if (fieldsMoved) {
+                        this.props.databaseObjects.refreshDatabase('fields');
+                        this.setState({ fieldPositionDeltas: {} });
+                        if (scaleChanged) {
+                            this.saveChanges();
+                        }
+                    } else {
+                        this.props.databaseObjects.refreshDatabase('config');
+                    }
+
                     NotificationManager.success('Zmiany zapisane pomyślnie');
                 } else {
                     NotificationManager.error('Nie udało się zapisać zmian', 'Błąd');
@@ -157,6 +190,9 @@ export default class MapComponent extends Component {
 
         const maxDistance = Math.max(...fieldDistances);
 
+        const fieldsScale =
+            this.state.mapScale * parseFloat(this.state.fieldScale);
+
         const fields = Object.keys(this.props.databaseObjects.fields).map((id) => {
             const field = this.props.databaseObjects.fields[id];
 
@@ -184,7 +220,7 @@ export default class MapComponent extends Component {
                     teamColor={field.color}
                     regionName={field.name}
                     distance={field.distance}
-                    scale={this.state.mapScale}
+                    scale={fieldsScale}
                     fieldId={parseInt(id, 10)}
                     positionX={field.map_x * this.state.mapScale}
                     positionY={field.map_y * this.state.mapScale}
@@ -200,7 +236,9 @@ export default class MapComponent extends Component {
             );
         });
 
-        const fieldsMoved = Object.keys(this.state.fieldPositionDeltas).length > 0;
+        const fieldsMoved = Object.keys(this.state.fieldPositionDeltas).length > 0
+            || parseFloat(this.state.fieldScale)
+                !== parseFloat(this.props.databaseObjects.config.fieldsScale);
 
         // console.log(this.state.dimensions);
 
@@ -209,22 +247,37 @@ export default class MapComponent extends Component {
                 {this.props.isEditable &&
                     <div
                         className="map-manager-buttons"
-                        style={{
-                            visibility: fieldsMoved ? 'visible' : 'hidden',
-                        }}
+                        // style={{
+                        //     visibility: fieldsMoved ? 'visible' : 'hidden',
+                        // }}
                     >
                         <button
                             onClick={this.saveChanges}
                             className="btn btn-outline-light btn-lg"
+                            disabled={!fieldsMoved}
                         >
                             Zapisz zmiany
                         </button>
                         <button
-                            onClick={() => this.setState({ fieldPositionDeltas: {} })}
+                            onClick={this.reverseChanges}
                             className="btn btn-outline-light btn-lg"
+                            disabled={!fieldsMoved}
                         >
                             Cofnij zmiany
                         </button>
+                        <label htmlFor="fieldScaleInput" style={{marginLeft: '20px', marginRight: '5px'}}>
+                            Rozmiar pól
+                        </label>
+                        <input
+                            type="number"
+                            id="fieldScaleInput"
+                            className="form-control bg-dark text-white"
+                            name="fieldScale"
+                            style={{ display: 'inline-block', width: '75px', height: '48px' }}
+                            onChange={e => this.setState({ fieldScale: e.target.value })}
+                            value={this.state.fieldScale}
+                            step={0.05}
+                        />
                     </div>
                 }
                 <Measure
@@ -236,7 +289,7 @@ export default class MapComponent extends Component {
                     {({ measureRef }) =>
                         (<Fullscreen
                             enabled={this.state.isFullScreen}
-                            onChange={isFullScreen => this.setState({isFullScreen})}
+                            onChange={isFullScreen => this.setState({ isFullScreen })}
                         >
                             <div
                                 className="map-image-container"

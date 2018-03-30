@@ -480,6 +480,73 @@ export default class DatabaseManager {
         });
     }
 
+    getConfig(callback) {
+        this.connection.query('SELECT * FROM GameConfig', (err, results) => {
+            if (err) {
+                console.error(err);
+                callback({ err });
+                return;
+            }
+
+            const config = results.reduce((fullConfig, entry) =>
+                ({ ...fullConfig, [entry.name]: entry.value }), {});
+
+            callback({ config });
+        });
+    }
+
+    updateConfig(newValues, callback) {
+        try {
+            this.connection.beginTransaction((err) => {
+                if (err) {
+                    console.error(err);
+                    callback({ err });
+                    return;
+                }
+
+                const queriesToBeDone = Object.keys(newValues).length;
+                let queriesDone = 0;
+                let errorOccured = false;
+
+                Object.keys(newValues).forEach((key) => {
+                    if (errorOccured) {
+                        return;
+                    }
+
+                    const query = 'INSERT INTO GameConfig (name, value) ' +
+                        `VALUES (${mysql.escape(key)}, ${mysql.escape(newValues[key])})` +
+                        `ON DUPLICATE KEY UPDATE value=${mysql.escape(newValues[key])}`;
+
+                    this.connection.query(query, (error) => {
+                        if (error) {
+                            console.error(error);
+                            errorOccured = true;
+                            this.connection.rollback();
+                            callback({ err: 'err' });
+                            return;
+                        }
+
+                        queriesDone++;
+                        if (queriesToBeDone === queriesDone) {
+                            this.connection.commit((err2) => {
+                                if (err2) {
+                                    console.error(err2);
+                                    callback({ err: 'err' });
+                                    return;
+                                }
+
+                                callback({ ok: 'ok' });
+                            });
+                        }
+                    });
+                });
+            });
+        } catch (e) {
+            console.error(e);
+            callback({ err: 'err' });
+        }
+    }
+
     addPoints(newPoints, newDate, callback) {
         try {
             this.connection.beginTransaction((err) => {

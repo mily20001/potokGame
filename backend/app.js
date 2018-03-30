@@ -180,6 +180,22 @@ const server = http.createServer((req, res) => {
                     });
                 }
             });
+        } else if (req.url === '/get_config') {
+            databaseManager.getUserFromCookie(cookies.token, (result) => {
+                if (result.err !== undefined || result.user === undefined) {
+                    res.writeHead(403);
+                    res.end();
+                } else {
+                    databaseManager.getConfig((result2) => {
+                        if (result2.config !== undefined) {
+                            res.end(JSON.stringify({ config: result2.config }));
+                        } else {
+                            res.writeHead(500);
+                            res.end();
+                        }
+                    });
+                }
+            });
         } else if (req.url === '/logout') {
             databaseManager.getUserFromCookie(cookies.token, (result) => {
                 if (result.err !== undefined || result.user === undefined) {
@@ -543,7 +559,7 @@ const server = http.createServer((req, res) => {
 
         if (req.url === '/upload' || req.url === '/add_user' || req.url === '/modify_points'
             || req.url === '/add_points' || req.url === '/add_team' || req.url === '/add_region'
-            || req.url === '/add_level' || req.url === '/move_fields'
+            || req.url === '/add_level' || req.url === '/move_fields' || req.url === '/update_config'
         ) {
             const form = new multiparty.Form();
 
@@ -710,6 +726,30 @@ const server = http.createServer((req, res) => {
                                 newRegion[name] = fields[name][0];
                             });
                             databaseManager.addRegion(newRegion, (result2) => {
+                                if (result2.ok !== undefined) {
+                                    res.end(JSON.stringify({ ok: 'ok' }));
+                                } else {
+                                    res.writeHead(500);
+                                    res.end(JSON.stringify({ err: 'err' }));
+                                }
+                            });
+                        } else {
+                            res.writeHead(400);
+                            res.end(JSON.stringify({ err: 'err' }));
+                        }
+                    });
+                } else if (req.url === '/update_config') {
+                    console.log(fields);
+                    databaseManager.getUserFromCookie(cookies.token, (result) => {
+                        if (result.err !== undefined || result.user === undefined || result.user.role !== 'admin') {
+                            res.writeHead(403);
+                            res.end();
+                        } else if (Object.keys(fields).length) {
+                            const newValues = {};
+                            Object.keys(fields).forEach((name) => {
+                                newValues[name] = fields[name][0];
+                            });
+                            databaseManager.updateConfig(newValues, (result2) => {
                                 if (result2.ok !== undefined) {
                                     res.end(JSON.stringify({ ok: 'ok' }));
                                 } else {

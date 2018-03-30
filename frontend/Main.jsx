@@ -146,6 +146,7 @@ export default class Main extends Component {
             this.getDatabaseData('/get_fields', 'fields'),
             this.getDatabaseData('/get_regions', 'regions'),
             this.getDatabaseData('/get_image_list', 'images'),
+            this.getDatabaseData('/get_config', 'config'),
         ]);
     }
 
@@ -156,6 +157,7 @@ export default class Main extends Component {
             this.getDatabaseData('/get_fields', 'fields'),
             this.getDatabaseData('/get_regions', 'regions'),
             this.getDatabaseData('/get_image_list', 'images'),
+            this.getDatabaseData('/get_config', 'config'),
         ]);
     }
 
@@ -193,6 +195,8 @@ export default class Main extends Component {
             this.getDatabaseData('/get_dragons', 'dragons');
         } else if (dataId === 'images') {
             this.getDatabaseData('/get_image_list', 'images');
+        } else if (dataId === 'config') {
+            this.getDatabaseData('/get_config', 'config');
         }
     }
 
