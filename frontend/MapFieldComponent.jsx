@@ -4,6 +4,8 @@ import { Tooltip } from 'react-tippy';
 
 import 'react-tippy/dist/tippy.css';
 
+import DragonCard from './DragonCard';
+
 export default class MapFieldComponent extends Component {
     constructor(props) {
         super(props);
@@ -75,7 +77,7 @@ export default class MapFieldComponent extends Component {
             // display: 'flex',
             // flexDirection: this.props.isFortress ? 'row' : 'column',
             userSelect: 'none',
-            zIndex: 10,
+            zIndex: 5,
         };
 
         // console.log(frameStyle.transform);
@@ -120,24 +122,58 @@ export default class MapFieldComponent extends Component {
             top: `-${borderWidth}px`,
         };
 
+        const fieldCardsContinerStyle = {
+            zIndex: 6,
+            position: 'absolute',
+            left: `-${borderWidth}px`,
+            top: `-${borderWidth}px`,
+            overflow: 'visible',
+        };
+
         const frameContentStyle = {
             display: 'flex',
             flexDirection: this.props.isFortress ? 'row' : 'column',
         };
 
-        // console.log(frameHeight, this.state.imageHeight);
+        const cardsWidth = baseWidth - (2 * borderWidth);
+        const cardsHeight = baseHeight - (2 * borderWidth) - 45;
+
+        const cardsOriginX = ((((1 - (this.props.cards.length % 2)) + 1) * (cardsWidth / -2)) +
+                (frameWidth / 2))
+            - (cardsWidth * Math.floor((this.props.cards.length - 1) / 2));
+
+        const cardsOriginY = borderWidth - 10;
+
+        const cards = this.props.cards.map((card, index) => {
+            return (
+                <DragonCard
+                    {...card}
+                    scale={this.props.scale}
+                    yPosition={cardsOriginY}
+                    xPosition={cardsOriginX + (cardsWidth * index)}
+                    width={cardsWidth}
+                    height={cardsHeight}
+                    isInFortress={this.props.isFortress}
+                />
+            );
+        });
+
+        console.log(`Prepared ${this.props.cards.length} cards`);
 
         return (
-                <div style={frameStyle}>
-                    <Tooltip
-                        title={this.props.regionName}
-                        position="right"
-                        trigger="mouseenter"
-                        animation="shift"
-                        distance={15}
-                        theme="transparent"
-                        arrow
-                    >
+            <div style={frameStyle}>
+                <div style={fieldCardsContinerStyle}>
+                    {cards}
+                </div>
+                <Tooltip
+                    title={this.props.regionName}
+                    position="bottom"
+                    trigger="mouseenter"
+                    animation="shift"
+                    distance={15}
+                    theme="transparent"
+                    arrow
+                >
                     {this.props.isMovable &&
                         <div style={fieldOverlayStyle} onMouseDown={this.dragStart} />
                     }
@@ -148,6 +184,7 @@ export default class MapFieldComponent extends Component {
                                 style={imageStyle}
                                 onLoad={this.setImageSize}
                                 src={this.props.innerImage}
+                                alt="tło pola"
                             />
                         </div>
                         <div style={detailsStyle}>
@@ -155,8 +192,8 @@ export default class MapFieldComponent extends Component {
                             <div style={distanceStyle}>{this.props.distance}</div>
                         </div>
                     </div>
-                    </Tooltip>
-                </div>
+                </Tooltip>
+            </div>
         );
     }
 }
@@ -176,4 +213,9 @@ MapFieldComponent.propTypes = {
     innerImage: PropTypes.string.isRequired,
     isMovable: PropTypes.bool.isRequired,
     move: PropTypes.func.isRequired,
+    cards: PropTypes.array,
+};
+
+MapFieldComponent.defaultProps = {
+    cards: [],
 };

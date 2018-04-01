@@ -214,6 +214,32 @@ export default class MapComponent extends Component {
 
             const isFortress = field.distance === maxDistance;
 
+            const cards = [];
+
+            if (id === '5' || id === '6') {
+                cards.push({
+                    dragonId: '12',
+                    dragonName: 'testowySmok',
+                    innerImage: fieldImages.defaultImage,
+                    HP: 32,
+                    playerName: 'Miłosz',
+                    dragonLevel: '2',
+                    teamColor: '#f00',
+                });
+            }
+
+            if (id === '5') {
+                cards.push({
+                    dragonId: '13',
+                    dragonName: 'testowySmok1234',
+                    innerImage: '',
+                    HP: 23,
+                    playerName: 'Emilka',
+                    dragonLevel: '4',
+                    teamColor: field.color,
+                });
+            }
+
             return (
                 <MapFieldComponent
                     teamId={field.team_id}
@@ -232,6 +258,7 @@ export default class MapComponent extends Component {
                         this.moveField(id, x, y);
                     }}
                     isFortress={isFortress}
+                    cards={cards}
                 />
             );
         });
@@ -265,7 +292,7 @@ export default class MapComponent extends Component {
                         >
                             Cofnij zmiany
                         </button>
-                        <label htmlFor="fieldScaleInput" style={{marginLeft: '20px', marginRight: '5px'}}>
+                        <label htmlFor="fieldScaleInput" style={{ marginLeft: '20px', marginRight: '5px' }}>
                             Rozmiar pól
                         </label>
                         <input
