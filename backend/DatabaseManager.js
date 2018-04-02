@@ -270,7 +270,7 @@ export default class DatabaseManager {
             'CField.name as current_field_name, NField.name as next_field_name, ' +
             'SUM(Points.points_efekt) + SUM(Points.points_przygotowanie) + ' +
             'SUM(Points.points_punktualnosc) + SUM(Points.points_skupienie) + ' +
-            'Players.starting_points as xp ' +
+            'Players.starting_points as xp, Teams.color as team_color ' +
             'from Players ' +
             'LEFT JOIN Teams ON Teams.id = Players.team_id ' +
             'LEFT JOIN Dragons ON Dragons.id = Players.dragon_id ' +
@@ -371,7 +371,29 @@ export default class DatabaseManager {
             const fields = results.reduce((allFields, field) =>
                 ({ ...allFields, [field.id]: { ...field } }), {});
 
-            callback({ fields });
+            let queriesToBeDone = Object.keys(fields).length;
+
+            Object.keys(fields).forEach((key) => {
+                this.connection.query(`SELECT id from Players WHERE current_field=${key}`, (err2, results2) => {
+                    if (err2) {
+                        console.error(err2);
+                        callback({ err: err2 });
+                        return;
+                    }
+
+                    fields[key].users = [];
+
+                    results2.forEach((user) => {
+                        fields[key].users.push(user.id);
+                    });
+
+                    queriesToBeDone--;
+
+                    if (queriesToBeDone === 0) {
+                        callback({ fields });
+                    }
+                });
+            });
         });
     }
 
@@ -906,7 +928,7 @@ export default class DatabaseManager {
             'CField.name as current_field_name, NField.name as next_field_name, ' +
             'SUM(Points.points_efekt) + SUM(Points.points_przygotowanie) + ' +
             'SUM(Points.points_punktualnosc) + SUM(Points.points_skupienie) + ' +
-            'Players.starting_points as xp, Logins.login_count ' +
+            'Players.starting_points as xp, Logins.login_count, Teams.color as team_color ' +
             'from Players ' +
             'LEFT JOIN Teams ON Teams.id = Players.team_id ' +
             'LEFT JOIN Dragons ON Dragons.id = Players.dragon_id ' +

@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { Tooltip } from 'react-tippy';
+import { Textfit } from 'react-textfit';
 
 import 'react-tippy/dist/tippy.css';
 
@@ -20,7 +21,7 @@ export default class MapFieldComponent extends Component {
     }
 
     setImageSize(e) {
-        console.log('Image height:', e.target.height);
+        // console.log('Image height:', e.target.height);
         this.setState({ imageHeight: e.target.height, imageWidth: e.target.width });
     }
 
@@ -53,10 +54,10 @@ export default class MapFieldComponent extends Component {
 
     render() {
         const borderWidth = 20;
-        const fortressWidth = 340;
-        const fortressHeight = 166;
+        const fortressWidth = 358;
+        const fortressHeight = 166 + 80;
         const baseWidth = 180;
-        const baseHeight = 270;
+        const baseHeight = 270 + 37;
 
         const frameWidth = this.props.isFortress ? fortressWidth : baseWidth;
         const frameHeight = this.props.isFortress ? fortressHeight : baseHeight;
@@ -88,21 +89,21 @@ export default class MapFieldComponent extends Component {
         };
 
         const fontSizeBase = this.props.isFortress ?
-            (frameHeight - (2 * borderWidth) - 20) / 2 :
-            frameHeight - this.state.imageHeight - (2 * borderWidth);
+            (frameHeight - 37 - (2 * borderWidth) - 20) / 2 :
+            frameHeight - 37 - this.state.imageHeight - (2 * borderWidth);
 
         const detailsStyle = {
             flexGrow: 1,
             fontSize: `${fontSizeBase - 5}px`,
             lineHeight: `${fontSizeBase}px`,
             display: 'flex',
-            flexDirection: this.props.isFortress ? 'column' : 'row',
+            // flexDirection: this.props.isFortress ? 'column' : 'row',
         };
 
         const signStyle = {
             flexGrow: 3,
             textAlign: 'center',
-            paddingTop: this.props.isFortress ? '10px' : 0,
+            // paddingTop: this.props.isFortress ? '10px' : 0,
         };
 
         const distanceStyle = {
@@ -132,53 +133,49 @@ export default class MapFieldComponent extends Component {
 
         const frameContentStyle = {
             display: 'flex',
-            flexDirection: this.props.isFortress ? 'row' : 'column',
+            // flexDirection: this.props.isFortress ? 'row' : 'column',
+            flexDirection: 'column',
         };
 
         const cardsWidth = baseWidth - (2 * borderWidth);
-        const cardsHeight = baseHeight - (2 * borderWidth) - 45;
+        const cardsHeight = baseHeight - 37 - (2 * borderWidth) - 45;
 
         const cardsOriginX = ((((1 - (this.props.cards.length % 2)) + 1) * (cardsWidth / -2)) +
                 (frameWidth / 2))
             - (cardsWidth * Math.floor((this.props.cards.length - 1) / 2));
 
-        const cardsOriginY = borderWidth - 10;
+        const cardsOriginY = borderWidth + 30;
 
-        const cards = this.props.cards.map((card, index) => {
+        const cards = this.props.cards.map((card, index) => (
+            <DragonCard
+                {...card}
+                scale={this.props.scale}
+                yPosition={cardsOriginY}
+                xPosition={cardsOriginX + (cardsWidth * index)}
+                width={cardsWidth}
+                height={cardsHeight}
+                isInFortress={this.props.isFortress}
+            />
+            ));
+
+        if (this.props.isFortress) {
             return (
-                <DragonCard
-                    {...card}
-                    scale={this.props.scale}
-                    yPosition={cardsOriginY}
-                    xPosition={cardsOriginX + (cardsWidth * index)}
-                    width={cardsWidth}
-                    height={cardsHeight}
-                    isInFortress={this.props.isFortress}
-                />
-            );
-        });
-
-        console.log(`Prepared ${this.props.cards.length} cards`);
-
-        return (
-            <div style={frameStyle}>
-                <div style={fieldCardsContinerStyle}>
-                    {cards}
-                </div>
-                <Tooltip
-                    title={this.props.regionName}
-                    position="bottom"
-                    trigger="mouseenter"
-                    animation="shift"
-                    distance={15}
-                    theme="transparent"
-                    arrow
-                >
+                <div style={frameStyle}>
+                    <div style={fieldCardsContinerStyle}>
+                        {cards}
+                    </div>
                     {this.props.isMovable &&
-                        <div style={fieldOverlayStyle} onMouseDown={this.dragStart} />
+                    <div style={fieldOverlayStyle} onMouseDown={this.dragStart} />
                     }
 
                     <div className="frame-content" style={frameContentStyle}>
+                        <div className="fortress-details">
+                            <Textfit mode="single" max={25}>
+                                {this.props.regionName}
+                                <i style={{ marginLeft: '10px' }} className="fa fa-map-signs" />
+                                {this.props.distance}
+                            </Textfit>
+                        </div>
                         <div>
                             <img
                                 style={imageStyle}
@@ -187,12 +184,39 @@ export default class MapFieldComponent extends Component {
                                 alt="tło pola"
                             />
                         </div>
-                        <div style={detailsStyle}>
-                            <i style={signStyle} className="fa fa-map-signs" />
-                            <div style={distanceStyle}>{this.props.distance}</div>
-                        </div>
                     </div>
-                </Tooltip>
+                </div>
+            );
+        }
+
+        return (
+            <div style={frameStyle}>
+                <div style={fieldCardsContinerStyle}>
+                    {cards}
+                </div>
+                {this.props.isMovable &&
+                    <div style={fieldOverlayStyle} onMouseDown={this.dragStart} />
+                }
+
+                <div className="frame-content" style={frameContentStyle}>
+                    <div className="region-name">
+                        <Textfit mode="single" max={25}>
+                            {this.props.regionName}
+                        </Textfit>
+                    </div>
+                    <div>
+                        <img
+                            style={imageStyle}
+                            onLoad={this.setImageSize}
+                            src={this.props.innerImage}
+                            alt="tło pola"
+                        />
+                    </div>
+                    <div style={detailsStyle}>
+                        <i style={signStyle} className="fa fa-map-signs" />
+                        <div style={distanceStyle}>{this.props.distance}</div>
+                    </div>
+                </div>
             </div>
         );
     }

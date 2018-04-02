@@ -20,6 +20,7 @@ export default class MapComponent extends Component {
             fieldPositionDeltas: {},
             isFullScreen: false,
             fieldScale: parseFloat(props.databaseObjects.config.fieldsScale),
+            dragonImages: {},
         };
 
         const mapId = Object.keys(props.databaseObjects.images).reduce((result, id) => {
@@ -41,6 +42,10 @@ export default class MapComponent extends Component {
         this.saveChanges = this.saveChanges.bind(this);
         this.reverseChanges = this.reverseChanges.bind(this);
     }
+
+    // componentDidMount() {
+    //
+    // }
 
     componentWillReceiveProps(nextProps) {
         if (this.props.databaseObjects.config.fieldsScale !==
@@ -214,31 +219,81 @@ export default class MapComponent extends Component {
 
             const isFortress = field.distance === maxDistance;
 
-            const cards = [];
+            const cards = field.users.map((userId) => {
+                const user = this.props.databaseObjects.users[userId];
+                let dragonImage = '';
+                if (user.dragon_id !== null
+                    && this.props.databaseObjects.dragons[user.dragon_id].image !== null
+                ) {
+                    const imageId = this.props.databaseObjects.dragons[user.dragon_id].image;
+                    if (this.state.dragonImages[imageId] === undefined) {
+                        this.state.dragonImages[imageId] = '';
 
-            if (id === '5' || id === '6') {
-                cards.push({
-                    dragonId: '12',
-                    dragonName: 'testowySmok',
-                    innerImage: fieldImages.defaultImage,
-                    HP: 32,
-                    playerName: 'Miłosz',
-                    dragonLevel: '2',
-                    teamColor: '#f00',
-                });
-            }
+                        this.props.databaseObjects.getImage(imageId, (data, dataType) => {
+                            let imgString = `${dataType};base64,`;
+                            imgString += btoa(String.fromCharCode.apply(null, (new Buffer(data.data))));
 
-            if (id === '5') {
-                cards.push({
-                    dragonId: '13',
-                    dragonName: 'testowySmok1234',
-                    innerImage: '',
-                    HP: 23,
-                    playerName: 'Emilka',
-                    dragonLevel: '4',
-                    teamColor: field.color,
+                            const dragonImages = { ...this.state.dragonImages };
+
+                            dragonImages[imageId] = imgString;
+
+                            this.setState({ dragonImages });
+                        });
+                    } else {
+                        dragonImage = this.state.dragonImages[imageId];
+                    }
+                }
+                return ({
+                    dragonId: user.dragon_id,
+                    dragonName: user.dragon,
+                    innerImage: dragonImage,
+                    HP: user.hp,
+                    dragonLevel: -1,
+                    teamColor: user.team_color,
+                    playerName: `${user.name} ${user.surname}`,
                 });
-            }
+            });
+
+            // Object.keys(this.props.databaseObjects.users).forEach((userId) => {
+            //     const user = this.props.databaseObjects.users[userId];
+            //     console.log(user.current_field, id);
+            //     if (user.current_field === parseInt(id, 10)) {
+            //         console.log('Adding card');
+            //         cards.push({
+            //             dragonId: user.dragon_id,
+            //             dragonName: user.dragon,
+            //             innerImage: fieldImages.defaultImage,
+            //             HP: user.hp,
+            //             dragonLevel: -1,
+            //             teamColor: user.team_color,
+            //             playerName: `${user.name} ${user.surname}`,
+            //         });
+            //     }
+            // });
+
+            // if (id === '5' || id === '6') {
+            //     cards.push({
+            //         dragonId: '12',
+            //         dragonName: 'testowySmok',
+            //         innerImage: fieldImages.defaultImage,
+            //         HP: 32,
+            //         playerName: 'Miłosz',
+            //         dragonLevel: '2',
+            //         teamColor: '#f00',
+            //     });
+            // }
+            //
+            // if (id === '5') {
+            //     cards.push({
+            //         dragonId: '13',
+            //         dragonName: 'testowySmok1234',
+            //         innerImage: '',
+            //         HP: 23,
+            //         playerName: 'Emilka',
+            //         dragonLevel: '4',
+            //         teamColor: field.color,
+            //     });
+            // }
 
             return (
                 <MapFieldComponent

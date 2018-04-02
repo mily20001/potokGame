@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 import { Tooltip } from 'react-tippy';
 
 import 'react-tippy/dist/tippy.css';
+import './AdminDragons.scss';
 
 export default class DragonCard extends Component {
     render() {
@@ -28,7 +29,13 @@ export default class DragonCard extends Component {
 
         const imageStyle = {
             width: '100%',
-            height: 'auto',
+            height: '100%',
+        };
+
+        const loaderStyle = {
+            width: '100%',
+            height: '30px',
+            marginTop: '60px',
         };
 
         const frameContentStyle = {
@@ -55,11 +62,22 @@ export default class DragonCard extends Component {
                     arrow
                 >
                     <div className="frame-content" style={frameContentStyle}>
-                        <img
-                            style={imageStyle}
-                            src={this.props.innerImage}
-                            alt="smok"
-                        />
+                        {this.props.innerImage !== '' &&
+                            <img
+                                style={imageStyle}
+                                src={this.props.innerImage}
+                                alt="smok"
+                            />
+                        }
+                        {this.props.innerImage === '' &&
+                            <div style={loaderStyle} className="image-loader-anim">
+                                <div className="rect1" />
+                                <div className="rect2" />
+                                <div className="rect3" />
+                                <div className="rect4" />
+                                <div className="rect5" />
+                            </div>
+                        }
                     </div>
                 </Tooltip>
             </div>
@@ -82,4 +100,8 @@ DragonCard.propTypes = {
     scale: PropTypes.number.isRequired,
     width: PropTypes.number.isRequired,
     height: PropTypes.number.isRequired,
+};
+
+DragonCard.defaultProps = {
+    innerImage: '',
 };
