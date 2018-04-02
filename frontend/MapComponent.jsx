@@ -21,6 +21,7 @@ export default class MapComponent extends Component {
             isFullScreen: false,
             fieldScale: parseFloat(props.databaseObjects.config.fieldsScale),
             dragonImages: {},
+            isBeingEdited: false,
         };
 
         const mapId = Object.keys(props.databaseObjects.images).reduce((result, id) => {
@@ -41,11 +42,39 @@ export default class MapComponent extends Component {
         this.moveField = this.moveField.bind(this);
         this.saveChanges = this.saveChanges.bind(this);
         this.reverseChanges = this.reverseChanges.bind(this);
+        this.startFinishEditing = this.startFinishEditing.bind(this);
     }
 
-    // componentDidMount() {
-    //
-    // }
+    componentWillMount() {
+        this.userToDragonImage = {};
+        Object.keys(this.props.databaseObjects.fields).forEach((id) => {
+            const field = this.props.databaseObjects.fields[id];
+            field.users.forEach((userId) => {
+                const user = this.props.databaseObjects.users[userId];
+                this.userToDragonImage[userId] = -1;
+                if (user.dragon_id !== null
+                    && this.props.databaseObjects.dragons[user.dragon_id].image !== null
+                ) {
+                    const imageId = this.props.databaseObjects.dragons[user.dragon_id].image;
+                    this.userToDragonImage[userId] = imageId;
+                    if (this.state.dragonImages[imageId] === undefined) {
+                        this.state.dragonImages[imageId] = '';
+
+                        this.props.databaseObjects.getImage(imageId, (data, dataType) => {
+                            let imgString = `${dataType};base64,`;
+                            imgString +=
+                                btoa(String.fromCharCode.apply(null, (new Buffer(data.data))));
+
+                            this.setState(state => ({
+                                dragonImages:
+                                    Object.assign({}, state.dragonImages, { [imageId]: imgString }),
+                            }));
+                        });
+                    }
+                }
+            });
+        });
+    }
 
     componentWillReceiveProps(nextProps) {
         if (this.props.databaseObjects.config.fieldsScale !==
@@ -53,6 +82,11 @@ export default class MapComponent extends Component {
         ) {
             this.setState({ fieldScale: parseFloat(nextProps.databaseObjects.config.fieldsScale) });
         }
+    }
+
+    startFinishEditing(newState) {
+        this.reverseChanges();
+        this.setState({ isBeingEdited: newState });
     }
 
     dragContinue(e) {
@@ -219,30 +253,15 @@ export default class MapComponent extends Component {
 
             const isFortress = field.distance === maxDistance;
 
-            const cards = field.users.map((userId) => {
+            const cards = this.state.isBeingEdited ? [] : field.users.map((userId) => {
                 const user = this.props.databaseObjects.users[userId];
+
                 let dragonImage = '';
-                if (user.dragon_id !== null
-                    && this.props.databaseObjects.dragons[user.dragon_id].image !== null
-                ) {
-                    const imageId = this.props.databaseObjects.dragons[user.dragon_id].image;
-                    if (this.state.dragonImages[imageId] === undefined) {
-                        this.state.dragonImages[imageId] = '';
 
-                        this.props.databaseObjects.getImage(imageId, (data, dataType) => {
-                            let imgString = `${dataType};base64,`;
-                            imgString += btoa(String.fromCharCode.apply(null, (new Buffer(data.data))));
-
-                            const dragonImages = { ...this.state.dragonImages };
-
-                            dragonImages[imageId] = imgString;
-
-                            this.setState({ dragonImages });
-                        });
-                    } else {
-                        dragonImage = this.state.dragonImages[imageId];
-                    }
+                if (this.userToDragonImage[userId] !== -1) {
+                    dragonImage = this.state.dragonImages[this.userToDragonImage[userId]];
                 }
+
                 return ({
                     dragonId: user.dragon_id,
                     dragonName: user.dragon,
@@ -254,49 +273,9 @@ export default class MapComponent extends Component {
                 });
             });
 
-            // Object.keys(this.props.databaseObjects.users).forEach((userId) => {
-            //     const user = this.props.databaseObjects.users[userId];
-            //     console.log(user.current_field, id);
-            //     if (user.current_field === parseInt(id, 10)) {
-            //         console.log('Adding card');
-            //         cards.push({
-            //             dragonId: user.dragon_id,
-            //             dragonName: user.dragon,
-            //             innerImage: fieldImages.defaultImage,
-            //             HP: user.hp,
-            //             dragonLevel: -1,
-            //             teamColor: user.team_color,
-            //             playerName: `${user.name} ${user.surname}`,
-            //         });
-            //     }
-            // });
-
-            // if (id === '5' || id === '6') {
-            //     cards.push({
-            //         dragonId: '12',
-            //         dragonName: 'testowySmok',
-            //         innerImage: fieldImages.defaultImage,
-            //         HP: 32,
-            //         playerName: 'Miłosz',
-            //         dragonLevel: '2',
-            //         teamColor: '#f00',
-            //     });
-            // }
-            //
-            // if (id === '5') {
-            //     cards.push({
-            //         dragonId: '13',
-            //         dragonName: 'testowySmok1234',
-            //         innerImage: '',
-            //         HP: 23,
-            //         playerName: 'Emilka',
-            //         dragonLevel: '4',
-            //         teamColor: field.color,
-            //     });
-            // }
-
             return (
                 <MapFieldComponent
+                    key={`field_${id}`}
                     teamId={field.team_id}
                     teamColor={field.color}
                     regionName={field.name}
@@ -308,7 +287,7 @@ export default class MapComponent extends Component {
                     translationX={translationX}
                     translationY={translationY}
                     innerImage={isFortress ? fieldImages.fortressImage : fieldImages.defaultImage}
-                    isMovable={this.props.isEditable}
+                    isMovable={this.props.isEditable && this.state.isBeingEdited}
                     move={(x, y) => {
                         this.moveField(id, x, y);
                     }}
@@ -322,17 +301,10 @@ export default class MapComponent extends Component {
             || parseFloat(this.state.fieldScale)
                 !== parseFloat(this.props.databaseObjects.config.fieldsScale);
 
-        // console.log(this.state.dimensions);
-
         return (
             <div className="map-main-container">
-                {this.props.isEditable &&
-                    <div
-                        className="map-manager-buttons"
-                        // style={{
-                        //     visibility: fieldsMoved ? 'visible' : 'hidden',
-                        // }}
-                    >
+                {this.props.isEditable && this.state.isBeingEdited &&
+                    <div className="map-manager-buttons">
                         <button
                             onClick={this.saveChanges}
                             className="btn btn-outline-light btn-lg"
@@ -347,6 +319,12 @@ export default class MapComponent extends Component {
                         >
                             Cofnij zmiany
                         </button>
+                        <button
+                            onClick={() => this.startFinishEditing(false)}
+                            className="btn btn-outline-light btn-lg"
+                        >
+                            Zakończ edycję
+                        </button>
                         <label htmlFor="fieldScaleInput" style={{ marginLeft: '20px', marginRight: '5px' }}>
                             Rozmiar pól
                         </label>
@@ -360,6 +338,16 @@ export default class MapComponent extends Component {
                             value={this.state.fieldScale}
                             step={0.05}
                         />
+                    </div>
+                }
+                {this.props.isEditable && !this.state.isBeingEdited &&
+                    <div className="map-manager-buttons">
+                        <button
+                            onClick={() => this.startFinishEditing(true)}
+                            className="btn btn-outline-light btn-lg"
+                        >
+                            Edytuj ustawienie pól
+                        </button>
                     </div>
                 }
                 <Measure

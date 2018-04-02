@@ -86,12 +86,12 @@ export default class DragonCard extends Component {
 }
 
 DragonCard.propTypes = {
-    dragonId: PropTypes.string.isRequired,
+    dragonId: PropTypes.number.isRequired,
     dragonName: PropTypes.string.isRequired,
     innerImage: PropTypes.string.isRequired,
-    HP: PropTypes.string.isRequired,
+    HP: PropTypes.number.isRequired,
     playerName: PropTypes.string.isRequired,
-    dragonLevel: PropTypes.string.isRequired,
+    dragonLevel: PropTypes.number.isRequired,
 
     teamColor: PropTypes.string.isRequired,
     isInFortress: PropTypes.bool.isRequired,
