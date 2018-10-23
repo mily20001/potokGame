@@ -250,11 +250,8 @@ const server = http.createServer((req, res) => {
                                 res.end(JSON.stringify({ err: 'err' }));
                             }
                         } else if (result2.data !== undefined) {
-                            res.end(JSON.stringify({
-                                id: imageId,
-                                data: result2.data,
-                                dataType: result2.dataType,
-                            }));
+                            res.writeHead(200, { 'Content-Type': result2.dataType.slice(5) });
+                            res.end(result2.data);
                         } else {
                             res.writeHead(500);
                             res.end();

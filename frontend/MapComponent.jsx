@@ -57,20 +57,6 @@ export default class MapComponent extends Component {
                 ) {
                     const imageId = this.props.databaseObjects.dragons[user.dragon_id].image;
                     this.userToDragonImage[userId] = imageId;
-                    if (this.state.dragonImages[imageId] === undefined) {
-                        this.state.dragonImages[imageId] = '';
-
-                        this.props.databaseObjects.getImage(imageId, (data, dataType) => {
-                            let imgString = `${dataType};base64,`;
-                            imgString +=
-                                btoa(String.fromCharCode.apply(null, (new Buffer(data.data))));
-
-                            this.setState(state => ({
-                                dragonImages:
-                                    Object.assign({}, state.dragonImages, { [imageId]: imgString }),
-                            }));
-                        });
-                    }
                 }
             });
         });
@@ -255,17 +241,13 @@ export default class MapComponent extends Component {
 
             const cards = this.state.isBeingEdited ? [] : field.users.map((userId) => {
                 const user = this.props.databaseObjects.users[userId];
-
-                let dragonImage = '';
-
-                if (this.userToDragonImage[userId] !== -1) {
-                    dragonImage = this.state.dragonImages[this.userToDragonImage[userId]];
-                }
+                const innerImageId =
+                    (this.userToDragonImage && this.userToDragonImage[userId]) || -1;
 
                 return ({
                     dragonId: user.dragon_id,
                     dragonName: user.dragon,
-                    innerImage: dragonImage,
+                    innerImageId,
                     HP: user.hp,
                     dragonLevel: -1,
                     teamColor: user.team_color,

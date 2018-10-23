@@ -18,7 +18,6 @@ export default function AdminDragonPreview(props) {
                 <div className="dragon-dropdown-element" onClick={() => props.changeImage(id)}>
                     <AdminDragonImage
                         imageId={parseInt(id, 10)}
-                        getImage={props.databaseObjects.getImage}
                     />
                     {props.databaseObjects.images[id].filename}
                 </div>
@@ -35,7 +34,6 @@ export default function AdminDragonPreview(props) {
             <div className="dragon-preview">
                 <AdminDragonImage
                     imageId={imageId === null ? undefined : imageId}
-                    getImage={props.databaseObjects.getImage}
                     // forceLoad={props.isBeingUpdated}
                 />
             </div>

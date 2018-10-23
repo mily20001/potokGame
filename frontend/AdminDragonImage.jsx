@@ -8,40 +8,30 @@ export default class AdminDragonImage extends Component {
         super();
         this.state = {
             status: 'loading',
-            data: undefined,
         };
+
+        this.setReady = this.setReady.bind(this);
     }
 
-    componentDidMount() {
-        if (this.props.imageId === undefined) {
-            return;
-        }
-
-        this.props.getImage(this.props.imageId, (data, dataType) => {
-            let imgString = `${dataType};base64,`;
-            imgString += btoa(String.fromCharCode.apply(null, (new Buffer(data.data))));
-
-            this.setState({ status: 'ready', data: imgString });
-        });
-    }
-
-    componentWillReceiveProps(nextProps) {
-        if (nextProps.imageId === undefined) {
-            return;
-        }
-
-        this.setState({ status: 'loading' });
-
-        nextProps.getImage(nextProps.imageId, (data, dataType) => {
-            let imgString = `${dataType};base64,`;
-            imgString += btoa(String.fromCharCode.apply(null, (new Buffer(data.data))));
-
-            this.setState({ status: 'ready', data: imgString });
-        });
+    setReady() {
+        this.setState({ status: 'ready' });
     }
 
     render() {
-        if (this.props.imageId === undefined) {
+        const { status } = this.state;
+        const { forceLoad, imageId } = this.props;
+
+        const loading = status === 'loading' || forceLoad;
+
+        const displayWhileReady = {
+            ...(loading && { display: 'none ' }),
+        };
+
+        const displayWhileLoading = {
+            ...(!loading && { display: 'none ' }),
+        };
+
+        if (imageId === undefined) {
             return (
                 <div className="dragon-image">
                     <i className="fa fa-times-circle" style={{ fontSize: '40px' }} />
@@ -49,21 +39,19 @@ export default class AdminDragonImage extends Component {
             );
         }
 
-        if (this.state.status === 'loading' || this.props.forceLoad) {
-            return (
-                <div className="image-loader-anim dragon-image">
+        return (
+            <div className="dragon-image">
+                <div style={displayWhileLoading} className="image-loader-anim dragon-image">
                     <div className="rect1" />
                     <div className="rect2" />
                     <div className="rect3" />
                     <div className="rect4" />
                     <div className="rect5" />
                 </div>
-            );
-        }
 
-        return (
-            <div className="dragon-image">
-                <img src={this.state.data} alt="dragon" />
+                <div style={displayWhileReady} className="dragon-image">
+                    <img src={`/get_image?id=${imageId}`} alt="dragon" onLoad={this.setReady} />
+                </div>
             </div>
         );
     }
@@ -71,7 +59,6 @@ export default class AdminDragonImage extends Component {
 
 AdminDragonImage.propTypes = {
     imageId: PropTypes.number,
-    getImage: PropTypes.func.isRequired,
     forceLoad: PropTypes.bool,
 };
 
