@@ -45,7 +45,11 @@ export default class AdminTeamList extends Component {
 
     render() {
         const teams = Object.keys(this.props.databaseObjects.teams).map(key =>
-            (<tr>
+            (<tr
+                style={{ outline:
+                        this.props.currentUser.team === this.props.databaseObjects.teams[key].name
+                            ? '1px white solid' : '' }}
+            >
                 <td>{this.props.databaseObjects.teams[key].name}</td>
                 <td>{this.props.databaseObjects.teams[key].capitan_name}</td>
                 <td >
@@ -98,9 +102,11 @@ AdminTeamList.propTypes = {
     databaseObjects: PropTypes.object.isRequired,
     editTeam: PropTypes.func,
     isEditable: PropTypes.bool,
+    currentUser: PropTypes.object,
 };
 
 AdminTeamList.defaultProps = {
     editTeam: () => {},
     isEditable: false,
+    currentUser: {},
 };

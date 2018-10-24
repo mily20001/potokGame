@@ -250,8 +250,21 @@ export default class UserList extends Component {
 
         const header = headerFields.map(field => <th>{field}</th>);
 
-        const users = Object.keys(this.props.databaseObjects.users).map((key) => {
-            const user = this.props.databaseObjects.users[key];
+        const sortedUsers = Object.keys(this.props.databaseObjects.users)
+            .map(key => ({ ...this.props.databaseObjects.users[key], id: key }))
+            .sort((u1, u2) => {
+                if (u1.team_id === u2.team_id) {
+                    return u2.xp - u1.xp;
+                }
+
+                return u2.team_id - u1.team_id;
+            });
+
+        const users = sortedUsers.map((user) => {
+            const key = user.id;
+
+            const outlineColor = user.team_color || '';
+            const yourTeam = !this.props.isAdmin && (user.team === this.props.currentUser.team);
 
             let columns;
 
@@ -317,6 +330,10 @@ export default class UserList extends Component {
                     </td>);
             }
 
+            if (outlineColor) {
+                return (<tr style={{ outline: `${yourTeam ? 2 : 1}px ${yourTeam ? 'solid' : 'dashed'} ${outlineColor}` }}>{columns}</tr>);
+            }
+
             return (<tr>{columns}</tr>);
         });
 
@@ -340,6 +357,7 @@ export default class UserList extends Component {
 
 UserList.propTypes = {
     databaseObjects: PropTypes.object.isRequired,
+    currentUser: PropTypes.object.isRequired,
     editUser: PropTypes.func,
     isEditable: PropTypes.bool,
     compact: PropTypes.bool,

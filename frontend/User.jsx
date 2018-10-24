@@ -77,7 +77,10 @@ export default class User extends Component {
                             path="/user/teams"
                             render={() =>
                                 (<div className="container">
-                                    <AdminTeamList databaseObjects={this.props.databaseObjects} />
+                                    <AdminTeamList
+                                        databaseObjects={this.props.databaseObjects}
+                                        currentUser={this.props.user}
+                                    />
                                 </div>)
                             }
                         />
@@ -85,7 +88,10 @@ export default class User extends Component {
                             path="/user/players"
                             render={() =>
                                 (<div className="container">
-                                    <UserList databaseObjects={this.props.databaseObjects} />
+                                    <UserList
+                                        databaseObjects={this.props.databaseObjects}
+                                        currentUser={this.props.user}
+                                    />
                                 </div>)
                             }
                         />
