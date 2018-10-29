@@ -22,6 +22,7 @@ export default class MapComponent extends Component {
             fieldScale: parseFloat(props.databaseObjects.config.fieldsScale),
             dragonImages: {},
             isBeingEdited: false,
+            reachableMarked: true,
         };
 
         const mapId = Object.keys(props.databaseObjects.images).reduce((result, id) => {
@@ -275,6 +276,8 @@ export default class MapComponent extends Component {
                     }}
                     isFortress={isFortress}
                     cards={cards}
+                    disabled={this.state.reachableMarked
+                        && !this.props.user.reachableFields.includes(parseInt(id, 10))}
                 />
             );
         });
@@ -399,6 +402,7 @@ export default class MapComponent extends Component {
 
 MapComponent.propTypes = {
     databaseObjects: PropTypes.object.isRequired,
+    user: PropTypes.object.isRequired,
     isEditable: PropTypes.bool,
 };
 

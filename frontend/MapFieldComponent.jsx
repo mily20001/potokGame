@@ -65,13 +65,15 @@ export default class MapFieldComponent extends Component {
 
         const frameBorderColor = Color(this.props.teamColor);
 
-        const frameHoveredBorderColor = frameBorderColor.isLight() ?
+        const colorFrameHoveredBorderColor = frameBorderColor.isLight() ?
             frameBorderColor.darken(0.3) : frameBorderColor.lighten(0.35);
+
+        const frameHoveredBorderColor = this.props.disabled ? Color('#aaa') : colorFrameHoveredBorderColor;
 
         const frameStyle = {
             width: `${frameWidth}px`,
             height: `${frameHeight}px`,
-            borderColor: this.props.teamColor,
+            borderColor: this.props.disabled ? '#aaa' : this.props.teamColor,
             borderStyle: 'solid',
             borderWidth: `${borderWidth}px`,
             borderRadius: '5px',
@@ -163,9 +165,9 @@ export default class MapFieldComponent extends Component {
             return Style.it(`
                     #field_${this.props.fieldId}_main:hover {
                         border-color: ${frameHoveredBorderColor.hex()} !important;
-                        border-width: ${borderWidth + growDelta}px !important;
+                        /* border-width: ${borderWidth + growDelta}px !important;
                         width: ${frameWidth + (growDelta * 2)}px !important;
-                        height: ${frameHeight + (growDelta * 2)}px !important;
+                        height: ${frameHeight + (growDelta * 2)}px !important; */
                     }
                 `,
                 <div>
@@ -201,9 +203,9 @@ export default class MapFieldComponent extends Component {
         return Style.it(`
                 #field_${this.props.fieldId}_main:hover {
                     border-color: ${frameHoveredBorderColor.hex()} !important;
-                    border-width: ${borderWidth + growDelta}px !important;
+                    /* border-width: ${borderWidth + growDelta}px !important;
                     width: ${frameWidth + (growDelta * 2)}px !important;
-                    height: ${frameHeight + (growDelta * 2)}px !important;
+                    height: ${frameHeight + (growDelta * 2)}px !important; */
                 }
             `,
             <div>
@@ -254,9 +256,13 @@ MapFieldComponent.propTypes = {
     innerImage: PropTypes.string.isRequired,
     isMovable: PropTypes.bool.isRequired,
     move: PropTypes.func.isRequired,
+    disabled: PropTypes.bool,
+    onClick: PropTypes.func,
     cards: PropTypes.array,
 };
 
 MapFieldComponent.defaultProps = {
+    disabled: false,
+    onClick: () => {},
     cards: [],
 };

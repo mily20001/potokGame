@@ -22,6 +22,7 @@ const databaseManager = new DatabaseManager();
 
 databaseManager.propagatePoints();
 
+databaseManager.getReachableFields(2, () => {});
 // databaseManager.addPlayer('admin', 'milosz', 'Miłosz', 'D.', () => {});
 // databaseManager.login('admin', 'milosz', () => {});
 // databaseManager.getUserFromCookie('cc0aa36fac252b77a69a810451fa4caa339522051e91
@@ -926,3 +927,5 @@ const server = http.createServer((req, res) => {
     }
 });
 server.listen(3000);
+
+// setTimeout(databaseManager.getReachableFields, 2000, 2);

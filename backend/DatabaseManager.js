@@ -307,17 +307,19 @@ export default class DatabaseManager {
                             hp: player.hp === null ? -1 : player.hp,
                         } }), {});
             } else if (requestRole === 'player') {
-                players = results.reduce((allPlayers, player) => ({
-                    ...allPlayers,
-                    [player.id]: {
-                        ...player,
-                        password: undefined,
-                        next_field: undefined,
-                        username: undefined,
-                        starting_points: undefined,
-                        hp: player.hp === null ? 0 : player.hp,
-                    },
-                }), {});
+                players = results
+                    .filter(player => player.hp !== null && player.hp >= 0)
+                    .reduce((allPlayers, player) => ({
+                        ...allPlayers,
+                        [player.id]: {
+                            ...player,
+                            password: undefined,
+                            next_field: undefined,
+                            username: undefined,
+                            starting_points: undefined,
+                            hp: player.hp,
+                        },
+                    }), {});
             } else {
                 callback({ err: 'err' });
                 return;
@@ -374,7 +376,7 @@ export default class DatabaseManager {
             let queriesToBeDone = Object.keys(fields).length;
 
             Object.keys(fields).forEach((key) => {
-                this.connection.query(`SELECT id from Players WHERE current_field=${key}`, (err2, results2) => {
+                this.connection.query(`SELECT id from Players WHERE current_field=${key} AND hp>=0`, (err2, results2) => {
                     if (err2) {
                         console.error(err2);
                         callback({ err: err2 });
@@ -634,7 +636,7 @@ export default class DatabaseManager {
     }
 
     addPlayer({ username, password, name, surname, role, dragon_id, team_id, current_field,
-                  next_field, starting_points, id }, callback) {
+                  next_field, starting_points, id, hp }, callback) {
         const hash = (password !== undefined) ? bcrypt.hashSync(password, 11) : undefined;
         const user = { username,
             password: hash,
@@ -646,6 +648,7 @@ export default class DatabaseManager {
             current_field,
             next_field,
             starting_points,
+            hp,
         };
 
         /* eslint camelcase: "warn" */
@@ -954,7 +957,17 @@ export default class DatabaseManager {
                 return;
             }
 
-            callback({ user: results[0] });
+            if (results[0].role === 'player') {
+                this.getReachableFields(id, (reachableFields) => {
+                    if (!reachableFields.err) {
+                        callback({ user: { ...results[0], ...reachableFields } });
+                    } else {
+                        callback({ err: 'err2' });
+                    }
+                });
+            } else {
+                callback({ user: results[0] });
+            }
         });
     }
 
@@ -1114,43 +1127,74 @@ export default class DatabaseManager {
     }
 
     getReachableFields(id, callback) {
-        const query = 'SELECT Players.dragon_id, ' +
+        const query = 'SELECT Players.dragon_id, Fields.region_id, Fields.team_id, Regions.distance, ' +
             'SUM(Points.points_efekt) + SUM(Points.points_przygotowanie) + ' +
             'SUM(Points.points_punktualnosc) + SUM(Points.points_skupienie) + ' +
             'Players.starting_points as xp ' +
             'from Players ' +
             'LEFT JOIN Points ON Points.player_id = Players.id ' +
+            'LEFT JOIN Fields ON Fields.id = Players.current_field ' +
+            'LEFT JOIN Regions on Fields.region_id = Regions.id ' +
             `WHERE Players.id = ${mysql.escape(id)}`;
 
         this.connection.query(query, (err, results) => {
             if (err || results.length !== 1) {
+                // console.error(err);
                 callback({ err: 'err' });
                 return;
             }
 
-            const query2 = `SELECT * from Dragons_leveling WHERE dragon_id = ${results[0].dragon_id}`;
-            const userXP = results[0].xp;
+            // console.log(results[0]);
+
+            const user = results[0];
+
+            const query2 = `SELECT * from Dragons_leveling WHERE dragon_id = ${user.dragon_id}`;
+            const userXP = user.xp;
 
             this.connection.query(query2, (err2, res2) => {
                 if (err2) {
-                    callback({err: 'err'});
+                    callback({ err: 'err' });
                     return;
                 }
 
-                res2.sort((a, b) => a.xp - b.xp);
-                let currLvl = 0;
-                let currXP = 0;
+                res2.sort((a, b) => b.xp - a.xp);
                 const possibleLvls = res2.filter(lvl => lvl.xp <= userXP);
 
                 if (possibleLvls.length === 0) {
                     console.warn(`no matching dragon level found for ${id} (xp: ${userXP})`);
-                    callback({err: 'err'});
+                    callback({ err: 'err' });
                     return;
                 }
 
                 const currentLvl = possibleLvls[0];
 
-                const maxDistance = currLvl.range;
+                const maxDistance = currentLvl.range;
+
+                const query3 = 'SELECT Fields.id ' +
+                    'FROM Fields ' +
+                    'LEFT JOIN Regions ON Regions.id = Fields.region_id ' +
+                    `WHERE IF(Fields.team_id = ${user.team_id}, ` +
+                    `ABS(Regions.distance - ${user.distance}), Regions.distance + ${user.distance}) <= ${maxDistance}`;
+
+                this.connection.query(query3, (err3, res3) => {
+                    if (err3) {
+                        callback({ err: 'err' });
+                        return;
+                    }
+
+                    // console.log(res3);
+
+                    // TODO exclude occupied fields
+
+                    callback({ reachableFields: res3.map(field => field.id),
+                        dragonLevel: {
+                            level: currentLvl.level,
+                            hp: currentLvl.hp,
+                            range: currentLvl.range,
+                            strength: currentLvl.strength,
+                            defence: currentLvl.defence,
+                        } });
+                });
             });
         });
     }
