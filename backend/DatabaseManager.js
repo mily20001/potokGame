@@ -1112,4 +1112,46 @@ export default class DatabaseManager {
             });
         });
     }
+
+    getReachableFields(id, callback) {
+        const query = 'SELECT Players.dragon_id, ' +
+            'SUM(Points.points_efekt) + SUM(Points.points_przygotowanie) + ' +
+            'SUM(Points.points_punktualnosc) + SUM(Points.points_skupienie) + ' +
+            'Players.starting_points as xp ' +
+            'from Players ' +
+            'LEFT JOIN Points ON Points.player_id = Players.id ' +
+            `WHERE Players.id = ${mysql.escape(id)}`;
+
+        this.connection.query(query, (err, results) => {
+            if (err || results.length !== 1) {
+                callback({ err: 'err' });
+                return;
+            }
+
+            const query2 = `SELECT * from Dragons_leveling WHERE dragon_id = ${results[0].dragon_id}`;
+            const userXP = results[0].xp;
+
+            this.connection.query(query2, (err2, res2) => {
+                if (err2) {
+                    callback({err: 'err'});
+                    return;
+                }
+
+                res2.sort((a, b) => a.xp - b.xp);
+                let currLvl = 0;
+                let currXP = 0;
+                const possibleLvls = res2.filter(lvl => lvl.xp <= userXP);
+
+                if (possibleLvls.length === 0) {
+                    console.warn(`no matching dragon level found for ${id} (xp: ${userXP})`);
+                    callback({err: 'err'});
+                    return;
+                }
+
+                const currentLvl = possibleLvls[0];
+
+                const maxDistance = currLvl.range;
+            });
+        });
+    }
 }
