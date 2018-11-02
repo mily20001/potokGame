@@ -7,6 +7,7 @@ import Style from 'style-it';
 import 'react-tippy/dist/tippy.css';
 
 import DragonCard from './DragonCard';
+import Strzalka from './Strzalka';
 
 export default class MapFieldComponent extends Component {
     constructor() {
@@ -65,13 +66,15 @@ export default class MapFieldComponent extends Component {
 
         const frameBorderColor = Color(this.props.teamColor);
 
-        const frameHoveredBorderColor = frameBorderColor.isLight() ?
+        const colorFrameHoveredBorderColor = frameBorderColor.isLight() ?
             frameBorderColor.darken(0.3) : frameBorderColor.lighten(0.35);
+
+        const frameHoveredBorderColor = this.props.disabled ? Color('#aaa') : colorFrameHoveredBorderColor;
 
         const frameStyle = {
             width: `${frameWidth}px`,
             height: `${frameHeight}px`,
-            borderColor: this.props.teamColor,
+            borderColor: this.props.disabled ? '#aaa' : this.props.teamColor,
             borderStyle: 'solid',
             borderWidth: `${borderWidth}px`,
             borderRadius: '5px',
@@ -84,6 +87,7 @@ export default class MapFieldComponent extends Component {
             userSelect: 'none',
             zIndex: 5,
             transition: 'border 0.25s, width 0.25s, height 0.25s',
+            cursor: (this.props.reachableMarked && !this.props.disabled) ? 'pointer' : 'initial',
         };
 
         const imageStyle = {
@@ -146,30 +150,66 @@ export default class MapFieldComponent extends Component {
 
         const cardsOriginY = borderWidth + 30;
 
-        const cards = this.props.cards.map((card, index) => (
-            <DragonCard
-                key={`dragon_card_${card.playerName}`}
-                {...card}
-                scale={this.props.scale}
-                yPosition={cardsOriginY}
-                xPosition={cardsOriginX + (cardsWidth * index)}
-                width={cardsWidth}
-                height={cardsHeight}
-                isInFortress={this.props.isFortress}
-            />
-            ));
+        const arrows = [];
+
+        const cards = this.props.cards.map((card, index) => {
+            const xPosition = cardsOriginX + (cardsWidth * index);
+            const yPosition = cardsOriginY;
+
+            if (this.props.reachableMarked && card.nextField && card.nextField.x) {
+                const startPoint = {
+                    x: ((xPosition + (cardsWidth / 2))
+                        * this.props.scale) + (this.props.positionX + this.props.translationX),
+                    y: ((yPosition + (cardsHeight / 2))
+                        * this.props.scale) + (this.props.positionY
+                        + (this.props.translationY - (borderWidth * this.props.scale))),
+                };
+
+                const endPoint = {
+                    x: card.nextField.x,
+                    y: card.nextField.y,
+                };
+
+                arrows.push(<Strzalka
+                    width={70 * this.props.scale}
+                    startPoint={startPoint}
+                    endPoint={endPoint}
+                    color="#ff0"
+                    key={`next_field_arrow_from_${this.props.fieldId}_to_${card.nextField.id}`}
+                />);
+            }
+            return (
+                <DragonCard
+                    key={`dragon_card_${card.playerName}`}
+                    {...card}
+                    scale={this.props.scale}
+                    yPosition={yPosition}
+                    xPosition={xPosition}
+                    width={cardsWidth}
+                    height={cardsHeight}
+                    isInFortress={this.props.isFortress}
+                />
+            );
+        });
+
+        const onClickEvent = () => {
+            if (this.props.reachableMarked && !this.props.disabled) {
+                this.props.selectNextField();
+            }
+        };
 
         if (this.props.isFortress) {
             return Style.it(`
                     #field_${this.props.fieldId}_main:hover {
                         border-color: ${frameHoveredBorderColor.hex()} !important;
-                        border-width: ${borderWidth + growDelta}px !important;
+                        /* border-width: ${borderWidth + growDelta}px !important;
                         width: ${frameWidth + (growDelta * 2)}px !important;
-                        height: ${frameHeight + (growDelta * 2)}px !important;
+                        height: ${frameHeight + (growDelta * 2)}px !important; */
                     }
                 `,
                 <div>
-                    <div id={`field_${this.props.fieldId}_main`} style={frameStyle}>
+                    {arrows}
+                    <div id={`field_${this.props.fieldId}_main`} style={frameStyle} onClick={onClickEvent}>
                         <div style={fieldCardsContinerStyle}>
                             {cards}
                         </div>
@@ -201,13 +241,14 @@ export default class MapFieldComponent extends Component {
         return Style.it(`
                 #field_${this.props.fieldId}_main:hover {
                     border-color: ${frameHoveredBorderColor.hex()} !important;
-                    border-width: ${borderWidth + growDelta}px !important;
+                    /* border-width: ${borderWidth + growDelta}px !important;
                     width: ${frameWidth + (growDelta * 2)}px !important;
-                    height: ${frameHeight + (growDelta * 2)}px !important;
+                    height: ${frameHeight + (growDelta * 2)}px !important; */
                 }
             `,
             <div>
-                <div id={`field_${this.props.fieldId}_main`} style={frameStyle}>
+                {arrows}
+                <div id={`field_${this.props.fieldId}_main`} style={frameStyle} onClick={onClickEvent}>
                     <div style={fieldCardsContinerStyle}>
                         {cards}
                     </div>
@@ -254,9 +295,15 @@ MapFieldComponent.propTypes = {
     innerImage: PropTypes.string.isRequired,
     isMovable: PropTypes.bool.isRequired,
     move: PropTypes.func.isRequired,
+    disabled: PropTypes.bool,
     cards: PropTypes.array,
+    reachableMarked: PropTypes.bool,
+    selectNextField: PropTypes.func,
 };
 
 MapFieldComponent.defaultProps = {
+    disabled: false,
+    selectNextField: () => {},
     cards: [],
+    reachableMarked: false,
 };

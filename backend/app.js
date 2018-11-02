@@ -22,6 +22,7 @@ const databaseManager = new DatabaseManager();
 
 databaseManager.propagatePoints();
 
+databaseManager.getReachableFields(2, () => {});
 // databaseManager.addPlayer('admin', 'milosz', 'Miłosz', 'D.', () => {});
 // databaseManager.login('admin', 'milosz', () => {});
 // databaseManager.getUserFromCookie('cc0aa36fac252b77a69a810451fa4caa339522051e91
@@ -122,7 +123,7 @@ const server = http.createServer((req, res) => {
                     res.writeHead(403);
                     res.end();
                 } else {
-                    databaseManager.getPlayers(result.user.role, (result2) => {
+                    databaseManager.getPlayers(result.user.role, result.user, (result2) => {
                         if (result2.players !== undefined) {
                             res.end(JSON.stringify({ users: result2.players }));
                         } else {
@@ -543,6 +544,26 @@ const server = http.createServer((req, res) => {
                     });
                 }
             });
+        } else if (req.url.substr(0, '/set_next_field'.length) === '/set_next_field') {
+            databaseManager.getUserFromCookie(cookies.token, (result) => {
+                if (result.err !== undefined || result.user === undefined || result.user.role !== 'player') {
+                    res.writeHead(403);
+                    res.end();
+                } else if (req.url.split('?')[1] === undefined || req.url.split('?')[1].split('=')[1] === undefined) {
+                    res.writeHead(400);
+                    res.end();
+                } else {
+                    const fieldId = req.url.split('?')[1].split('=')[1];
+                    databaseManager.safeSetNextField(result.user.id, fieldId, (result2) => {
+                        if (result2.ok !== undefined) {
+                            res.end(JSON.stringify({ ok: 'ok' }));
+                        } else {
+                            res.writeHead(500);
+                            res.end();
+                        }
+                    });
+                }
+            });
         } else if (req.url.search(/\./) === -1) {
             res.writeHead(filesMap['/'].code, filesMap['/'].headers);
             res.end(fs.readFileSync(`${CONFIG.httpBasePath}/${filesMap['/'].file}`));
@@ -926,3 +947,5 @@ const server = http.createServer((req, res) => {
     }
 });
 server.listen(3000);
+
+// setTimeout(databaseManager.getReachableFields, 2000, 2);

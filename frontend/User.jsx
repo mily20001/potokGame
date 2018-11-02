@@ -110,7 +110,11 @@ export default class User extends Component {
                             exact
                             path="/user/map"
                             render={() =>
-                                <MapComponent databaseObjects={this.props.databaseObjects} />
+                                <MapComponent
+                                    isNextFieldChoosable
+                                    databaseObjects={this.props.databaseObjects}
+                                    user={this.props.user}
+                                />
                             }
                         />
                         <Route component={Page404} />

@@ -22,6 +22,8 @@ export default class MapComponent extends Component {
             fieldScale: parseFloat(props.databaseObjects.config.fieldsScale),
             dragonImages: {},
             isBeingEdited: false,
+            reachableMarked: false,
+            selectedNextField: -1,
         };
 
         const mapId = Object.keys(props.databaseObjects.images).reduce((result, id) => {
@@ -43,6 +45,7 @@ export default class MapComponent extends Component {
         this.saveChanges = this.saveChanges.bind(this);
         this.reverseChanges = this.reverseChanges.bind(this);
         this.startFinishEditing = this.startFinishEditing.bind(this);
+        this.selectNextField = this.selectNextField.bind(this);
     }
 
     componentWillMount() {
@@ -196,6 +199,38 @@ export default class MapComponent extends Component {
         xhr.send(data);
     }
 
+    selectNextField(fieldId) {
+        if (this.state.reachableMarked) {
+            this.setState({selectedNextField: fieldId});
+        }
+    }
+
+    saveSelectedNextField() {
+        if (this.state.selectedNextField === -1) {
+            return;
+        }
+
+        const xhr = new XMLHttpRequest();
+        xhr.open('GET', `/set_next_field?id=${this.state.selectedNextField}`, true);
+        xhr.onload = () => {
+            try {
+                const res = JSON.parse(xhr.responseText);
+                if (res.ok !== undefined) {
+                    this.setState({ reachableMarked: false, selectedNextField: -1 });
+                    this.props.databaseObjects.refreshDatabase('currentUser');
+                    this.props.databaseObjects.refreshDatabase('users');
+
+                    NotificationManager.success('Zmiany zapisane pomyślnie');
+                } else {
+                    NotificationManager.error('Nie udało się zapisać zmian', 'Błąd');
+                }
+            } catch (e) {
+                NotificationManager.error('Nie udało się zapisać zmian', 'Błąd');
+            }
+        };
+        xhr.send();
+    }
+
     render() {
         if (this.state.noMapFile) {
             return (
@@ -244,6 +279,23 @@ export default class MapComponent extends Component {
                 const innerImageId =
                     (this.userToDragonImage && this.userToDragonImage[userId]) || -1;
 
+                const nextField = {
+                    id: user.next_field,
+                };
+
+                if (user.id === this.props.user.id
+                    && this.state.reachableMarked
+                    && this.state.selectedNextField !== -1
+                ) {
+                    nextField.id = this.state.selectedNextField;
+                }
+
+                if (nextField.id || nextField === 0) {
+                    const nextFieldObj = this.props.databaseObjects.fields[nextField.id];
+                    nextField.x = (nextFieldObj.map_x * this.state.mapScale) + translationX;
+                    nextField.y = (nextFieldObj.map_y * this.state.mapScale) + translationY;
+                }
+
                 return ({
                     dragonId: user.dragon_id,
                     dragonName: user.dragon,
@@ -252,6 +304,7 @@ export default class MapComponent extends Component {
                     dragonLevel: -1,
                     teamColor: user.team_color,
                     playerName: `${user.name} ${user.surname}`,
+                    nextField,
                 });
             });
 
@@ -275,6 +328,10 @@ export default class MapComponent extends Component {
                     }}
                     isFortress={isFortress}
                     cards={cards}
+                    disabled={this.state.reachableMarked
+                        && !this.props.user.reachableFields.includes(parseInt(id, 10))}
+                    reachableMarked={this.state.reachableMarked}
+                    selectNextField={() => this.selectNextField(parseInt(id, 10))}
                 />
             );
         });
@@ -329,6 +386,34 @@ export default class MapComponent extends Component {
                             className="btn btn-outline-light btn-lg"
                         >
                             Edytuj ustawienie pól
+                        </button>
+                    </div>
+                }
+                {this.props.isNextFieldChoosable && !this.state.reachableMarked &&
+                    <div className="map-manager-buttons">
+                        <button
+                            onClick={() =>
+                                this.setState({ reachableMarked: true, selectedNextField: -1 })}
+                            className="btn btn-outline-light btn-lg"
+                        >
+                            Wybierz następne pole
+                        </button>
+                    </div>
+                }
+                {this.props.isNextFieldChoosable && this.state.reachableMarked &&
+                    <div className="map-manager-buttons">
+                        <button
+                            onClick={() => this.saveSelectedNextField()}
+                            className="btn btn-outline-light btn-lg"
+                            disabled={this.state.selectedNextField === -1}
+                        >
+                            Zapisz zmiany
+                        </button>
+                        <button
+                            onClick={() => this.setState({ reachableMarked: false })}
+                            className="btn btn-outline-light btn-lg"
+                        >
+                            Anuluj
                         </button>
                     </div>
                 }
@@ -399,9 +484,12 @@ export default class MapComponent extends Component {
 
 MapComponent.propTypes = {
     databaseObjects: PropTypes.object.isRequired,
+    user: PropTypes.object.isRequired,
     isEditable: PropTypes.bool,
+    isNextFieldChoosable: PropTypes.bool,
 };
 
 MapComponent.defaultProps = {
     isEditable: false,
+    isNextFieldChoosable: false,
 };
