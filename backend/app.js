@@ -123,7 +123,7 @@ const server = http.createServer((req, res) => {
                     res.writeHead(403);
                     res.end();
                 } else {
-                    databaseManager.getPlayers(result.user.role, (result2) => {
+                    databaseManager.getPlayers(result.user.role, result.user, (result2) => {
                         if (result2.players !== undefined) {
                             res.end(JSON.stringify({ users: result2.players }));
                         } else {
@@ -535,6 +535,26 @@ const server = http.createServer((req, res) => {
                 } else {
                     const dragonId = req.url.split('?')[1].split('=')[1];
                     databaseManager.deleteDragon(dragonId, (result2) => {
+                        if (result2.ok !== undefined) {
+                            res.end(JSON.stringify({ ok: 'ok' }));
+                        } else {
+                            res.writeHead(500);
+                            res.end();
+                        }
+                    });
+                }
+            });
+        } else if (req.url.substr(0, '/set_next_field'.length) === '/set_next_field') {
+            databaseManager.getUserFromCookie(cookies.token, (result) => {
+                if (result.err !== undefined || result.user === undefined || result.user.role !== 'player') {
+                    res.writeHead(403);
+                    res.end();
+                } else if (req.url.split('?')[1] === undefined || req.url.split('?')[1].split('=')[1] === undefined) {
+                    res.writeHead(400);
+                    res.end();
+                } else {
+                    const fieldId = req.url.split('?')[1].split('=')[1];
+                    databaseManager.safeSetNextField(result.user.id, fieldId, (result2) => {
                         if (result2.ok !== undefined) {
                             res.end(JSON.stringify({ ok: 'ok' }));
                         } else {

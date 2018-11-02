@@ -265,7 +265,7 @@ export default class DatabaseManager {
         });
     }
 
-    getPlayers(requestRole, callback) {
+    getPlayers(requestRole, requestAuthor, callback) {
         const query = 'SELECT Players.*, Teams.name as team, Dragons.name as dragon, ' +
             'CField.name as current_field_name, NField.name as next_field_name, ' +
             'SUM(Points.points_efekt) + SUM(Points.points_przygotowanie) + ' +
@@ -314,7 +314,8 @@ export default class DatabaseManager {
                         [player.id]: {
                             ...player,
                             password: undefined,
-                            next_field: undefined,
+                            next_field: player.team_id === requestAuthor.team_id ? player.next_field : undefined,
+                            next_field_name: player.team_id === requestAuthor.team_id ? player.next_field_name : undefined,
                             username: undefined,
                             starting_points: undefined,
                             hp: player.hp,
@@ -1173,8 +1174,12 @@ export default class DatabaseManager {
                 const query3 = 'SELECT Fields.id ' +
                     'FROM Fields ' +
                     'LEFT JOIN Regions ON Regions.id = Fields.region_id ' +
-                    `WHERE IF(Fields.team_id = ${user.team_id}, ` +
+                    'LEFT JOIN (SELECT id, IF(next_field is NULL, current_field, next_field) as field_id ' +
+                        `FROM Players WHERE team_id = ${user.team_id}) Team on Fields.id = Team.field_id ` +
+                    `WHERE Team.field_id is NULL AND IF(Fields.team_id = ${user.team_id}, ` +
                     `ABS(Regions.distance - ${user.distance}), Regions.distance + ${user.distance}) <= ${maxDistance}`;
+
+                // console.log(query3);
 
                 this.connection.query(query3, (err3, res3) => {
                     if (err3) {
@@ -1196,6 +1201,25 @@ export default class DatabaseManager {
                         } });
                 });
             });
+        });
+    }
+
+    safeSetNextField(id, fieldId, callback) {
+        this.getReachableFields(id, (result) => {
+            if (result.reachableFields.includes(parseInt(fieldId, 10))) {
+                const query = `UPDATE Players SET next_field=${mysql.escape(fieldId)} WHERE id=${mysql.escape(id)}`;
+                this.connection.query(query, (err) => {
+                    if (err) {
+                        callback({ err: 'err' });
+                        return;
+                    }
+
+                    callback({ ok: 'ok' });
+                });
+            } else {
+                callback({ err: 'err' });
+                console.warn(`Player ${id} tried to set prohibited next_field`);
+            }
         });
     }
 }

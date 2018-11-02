@@ -157,6 +157,16 @@ export default class Main extends Component {
             this.getDatabaseData('/get_image_list', 'images');
         } else if (dataId === 'config') {
             this.getDatabaseData('/get_config', 'config');
+        } else if (dataId === 'currentUser') {
+            const xhr = new XMLHttpRequest();
+            xhr.open('GET', '/get_user', true);
+            xhr.onload = () => {
+                const result = JSON.parse(xhr.responseText);
+                if (result.user !== undefined) {
+                    this.setState({ user: result.user });
+                }
+            };
+            xhr.send();
         }
     }
 
