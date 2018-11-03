@@ -22,7 +22,7 @@ const databaseManager = new DatabaseManager();
 
 databaseManager.propagatePoints();
 
-databaseManager.getReachableFields(2, () => {});
+// databaseManager.getReachableFields(2, () => {});
 // databaseManager.addPlayer('admin', 'milosz', 'Miłosz', 'D.', () => {});
 // databaseManager.login('admin', 'milosz', () => {});
 // databaseManager.getUserFromCookie('cc0aa36fac252b77a69a810451fa4caa339522051e91
@@ -520,6 +520,22 @@ const server = http.createServer((req, res) => {
                         } else {
                             res.writeHead(500);
                             res.end();
+                        }
+                    });
+                }
+            });
+        } else if (req.url.substr(0, '/commit_points'.length) === '/commit_points') {
+            databaseManager.getUserFromCookie(cookies.token, (result) => {
+                if (result.err !== undefined || result.user === undefined || result.user.role !== 'admin') {
+                    res.writeHead(403);
+                    res.end();
+                } else {
+                    databaseManager.commitPoints((result2) => {
+                        if (result2.ok !== undefined) {
+                            res.end(JSON.stringify({ ok: 'ok' }));
+                        } else {
+                            res.writeHead(500);
+                            res.end(JSON.stringify({ err: result2.err }));
                         }
                     });
                 }

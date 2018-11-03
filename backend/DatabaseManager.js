@@ -319,6 +319,8 @@ export default class DatabaseManager {
                             username: undefined,
                             starting_points: undefined,
                             hp: player.hp,
+                            xp: player.commited_xp,
+                            commited_xp: undefined,
                         },
                     }), {});
             } else {
@@ -930,13 +932,10 @@ export default class DatabaseManager {
     getUserFromId(id, callback) {
         const query = 'SELECT Players.*, Teams.name as team, Dragons.name as dragon, ' +
             'CField.name as current_field_name, NField.name as next_field_name, ' +
-            'SUM(Points.points_efekt) + SUM(Points.points_przygotowanie) + ' +
-            'SUM(Points.points_punktualnosc) + SUM(Points.points_skupienie) + ' +
-            'Players.starting_points as xp, Logins.login_count, Teams.color as team_color ' +
+            'Players.commited_xp as xp, Logins.login_count, Teams.color as team_color ' +
             'from Players ' +
             'LEFT JOIN Teams ON Teams.id = Players.team_id ' +
             'LEFT JOIN Dragons ON Dragons.id = Players.dragon_id ' +
-            'LEFT JOIN Points ON Points.player_id = Players.id ' +
             'LEFT JOIN (' +
             'SELECT Fields.*, CONCAT(Teams.name, " ", Regions.name) as name from Fields ' +
             'INNER JOIN Teams ON Fields.team_id = Teams.id ' +
@@ -1129,14 +1128,11 @@ export default class DatabaseManager {
 
     getReachableFields(id, callback) {
         const query = 'SELECT Players.dragon_id, Fields.region_id, Fields.team_id, Regions.distance, ' +
-            'SUM(Points.points_efekt) + SUM(Points.points_przygotowanie) + ' +
-            'SUM(Points.points_punktualnosc) + SUM(Points.points_skupienie) + ' +
-            'Players.starting_points as xp ' +
+            'Players.commited_xp as xp ' +
             'from Players ' +
-            'LEFT JOIN Points ON Points.player_id = Players.id ' +
             'LEFT JOIN Fields ON Fields.id = Players.current_field ' +
             'LEFT JOIN Regions on Fields.region_id = Regions.id ' +
-            `WHERE Players.id = ${mysql.escape(id)}`;
+            `WHERE Players.id = ${mysql.escape(id)} AND Players.gained_xp > 0`;
 
         this.connection.query(query, (err, results) => {
             if (err || results.length !== 1) {
@@ -1187,10 +1183,6 @@ export default class DatabaseManager {
                         return;
                     }
 
-                    // console.log(res3);
-
-                    // TODO exclude occupied fields
-
                     callback({ reachableFields: res3.map(field => field.id),
                         dragonLevel: {
                             level: currentLvl.level,
@@ -1221,5 +1213,9 @@ export default class DatabaseManager {
                 console.warn(`Player ${id} tried to set prohibited next_field`);
             }
         });
+    }
+
+    commitPoints(callback) {
+        
     }
 }
