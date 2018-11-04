@@ -290,7 +290,7 @@ export default class MapComponent extends Component {
                     nextField.id = this.state.selectedNextField;
                 }
 
-                if (nextField.id || nextField === 0) {
+                if (nextField.id || nextField.id === 0) {
                     const nextFieldObj = this.props.databaseObjects.fields[nextField.id];
                     nextField.x = (nextFieldObj.map_x * this.state.mapScale) + translationX;
                     nextField.y = (nextFieldObj.map_y * this.state.mapScale) + translationY;
@@ -484,7 +484,7 @@ export default class MapComponent extends Component {
 
 MapComponent.propTypes = {
     databaseObjects: PropTypes.object.isRequired,
-    user: PropTypes.object.isRequired,
+    user: PropTypes.object,
     isEditable: PropTypes.bool,
     isNextFieldChoosable: PropTypes.bool,
 };
@@ -492,4 +492,5 @@ MapComponent.propTypes = {
 MapComponent.defaultProps = {
     isEditable: false,
     isNextFieldChoosable: false,
+    user: {},
 };

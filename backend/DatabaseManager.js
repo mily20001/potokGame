@@ -1215,7 +1215,126 @@ export default class DatabaseManager {
         });
     }
 
+    static getCurrentLvl(levelsArr, xp) {
+        const possibleLvls = levelsArr.filter(lvl => lvl.xp <= xp);
+
+        if (possibleLvls.length === 0) {
+            return { err: 'err' };
+        }
+
+        return { lvl: possibleLvls[0] };
+    }
+
     commitPoints(callback) {
-        
+        const query = 'SELECT Players.commited_xp, Players.dragon_id, Players.hp, Players.id, ' +
+            'SUM(Points.points_efekt) + SUM(Points.points_przygotowanie) + ' +
+            'SUM(Points.points_punktualnosc) + SUM(Points.points_skupienie) + ' +
+            'Players.starting_points as xp ' +
+            'from Players ' +
+            'LEFT JOIN Points ON Points.player_id = Players.id ' +
+            'WHERE role = "player" AND hp >= 0 ' +
+            'GROUP BY Players.id';
+
+        this.connection.query(query, (err, res) => {
+            if (err) {
+                callback({ err: `error in stage 1: ${err}` });
+                return;
+            }
+
+            const users = res;
+
+            this.connection.query('SELECT * from Dragons_leveling', (err2, res2) => {
+                if (err2) {
+                    callback({ err: `error in stage 2: ${err2}` });
+                    return;
+                }
+
+                const dragons = res2;
+
+                let errOccured = false;
+
+                const changes = users.map((user) => {
+                    if (errOccured) {
+                        return undefined;
+                    }
+
+                    const userOldXP = user.commited_xp;
+                    const userXP = user.xp;
+
+                    const dragonLeveling = dragons
+                        .filter(dragonLvl => dragonLvl.dragon_id === user.dragon_id)
+                        .sort((a, b) => b.xp - a.xp);
+
+                    const oldLvlObj = DatabaseManager.getCurrentLvl(dragonLeveling, userOldXP);
+                    const newLvlObj = DatabaseManager.getCurrentLvl(dragonLeveling, userXP);
+
+                    if (oldLvlObj.err || newLvlObj.err) {
+                        callback({ err: `cannot calculate dragon levels for ${user.id}` });
+                        errOccured = true;
+                        return undefined;
+                    }
+
+                    const oldLvl = oldLvlObj.lvl;
+                    const newLvl = newLvlObj.lvl;
+
+                    const userChanges = {
+                        id: user.id,
+                        commited_xp: userXP,
+                        last_xp_gain: userXP - userOldXP,
+                    };
+
+                    if (oldLvl.hp !== newLvl.hp) {
+                        userChanges.hp = user.hp + (newLvl.hp - oldLvl.hp);
+                    }
+
+                    return userChanges;
+                });
+
+                if (errOccured) {
+                    return;
+                }
+
+                let queriesToBeDone = changes.length;
+
+                this.connection.beginTransaction((trErr) => {
+                    if (trErr) {
+                        callback({ err: `error in stage 3: ${trErr}` });
+                        return;
+                    }
+
+                    let trErrOccured = false;
+
+                    changes.forEach((userChange) => {
+                        const changedFields = Object.keys(userChange).filter(key => key !== 'id');
+                        const cQuery = 'UPDATE Players SET ' +
+                            `${changedFields.map(fieldId => `${fieldId}=${userChange[fieldId]}`).join(', ')} ` +
+                            `WHERE id = ${userChange.id}`;
+                        this.connection.query(cQuery, (cErr) => {
+                            if (cErr) {
+                                callback({ err: `error in stage 4: ${trErr}` });
+                                trErrOccured = true;
+                            }
+
+                            queriesToBeDone--;
+
+                            if (queriesToBeDone === 0) {
+                                if (trErrOccured) {
+                                    this.connection.rollback();
+                                } else {
+                                    this.connection.commit((commitErr) => {
+                                        if (commitErr) {
+                                            callback({ err: `error in stage 5: ${trErr}` });
+                                            this.connection.rollback();
+                                        } else {
+                                            callback({ ok: 'ok ' });
+                                        }
+                                    });
+                                }
+                            }
+                        });
+                    });
+                });
+            });
+        });
     }
 }
