@@ -86,7 +86,15 @@ export default class Admin extends Component {
                 </div>
                 <div style={mainStyle} className="admin-main-container">
                     <Switch>
-                        <Route exact path="/admin" component={AdminWelcomePage} />
+                        <Route
+                            exact
+                            path="/admin"
+                            render={() =>
+                            (<AdminWelcomePage
+                                databaseObjects={this.props.databaseObjects}
+                            />)
+                        }
+                        />
                         <Route
                             path="/admin/map/upload"
                             render={() => (<FileUploader

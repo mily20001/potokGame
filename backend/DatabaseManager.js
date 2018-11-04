@@ -25,6 +25,16 @@ export default class DatabaseManager {
             this.connected = true;
             console.log(`connected as id ${this.connection.threadId}`);
         });
+
+        this.promiseQuery = query => new Promise((resolve, reject) => {
+            this.connection.query(query, (err, res) => {
+                if (err) {
+                    reject(err);
+                } else {
+                    resolve(res);
+                }
+            });
+        });
     }
 
     getDragons(callback) {
@@ -266,7 +276,16 @@ export default class DatabaseManager {
     }
 
     getPlayers(requestRole, requestAuthor, callback) {
-        const query = 'SELECT Players.*, Teams.name as team, Dragons.name as dragon, ' +
+        const query2 = 'SELECT * from Dragons_leveling';
+        this.connection.query(query2, (errq2, resultsq2) => {
+            if (errq2) {
+                callback({ err: 'err' });
+                return;
+            }
+
+            const dragonsArr = resultsq2;
+
+            const query = 'SELECT Players.*, Teams.name as team, Dragons.name as dragon, ' +
             'CField.name as current_field_name, NField.name as next_field_name, ' +
             'SUM(Points.points_efekt) + SUM(Points.points_przygotowanie) + ' +
             'SUM(Points.points_punktualnosc) + SUM(Points.points_skupienie) + ' +
@@ -288,73 +307,110 @@ export default class DatabaseManager {
             `${requestRole === 'admin' ? '' : 'WHERE role = "player"'} ` +
             'GROUP BY Players.id';
 
-        this.connection.query(query, (err, results) => {
-            if (err) {
-                console.error(err);
-                callback({ err });
-                return;
-            }
+            this.connection.query(query, (err, results) => {
+                if (err) {
+                    console.error(err);
+                    callback({ err });
+                    return;
+                }
 
-            let players = {};
+                let players = {};
 
             // TODO czy pokazywać prawdziwe hp?
-            if (requestRole === 'admin') {
-                players = results.reduce((allPlayers, player) =>
+                if (requestRole === 'admin') {
+                    players = results
+                        .map((player) => {
+                            if (player.dragon_id) {
+                                const dragonLvls = dragonsArr
+                                    .filter(dragonLvl => dragonLvl.dragon_id === player.dragon_id)
+                                    .sort((a, b) => b.xp - a.xp);
+
+                                const lvl =
+                                    DatabaseManager.getCurrentLvl(dragonLvls, player.commited_xp);
+
+                                if (!lvl.err) {
+                                    return { ...player, lvl: lvl.lvl };
+                                }
+                            }
+
+                            return player;
+                        })
+                        .reduce((allPlayers, player) =>
                     ({ ...allPlayers,
                         [player.id]: {
                             ...player,
                             password: undefined,
                             hp: player.hp === null ? -1 : player.hp,
                         } }), {});
-            } else if (requestRole === 'player') {
-                players = results
+                } else if (requestRole === 'player') {
+                    players = results
                     .filter(player => player.hp !== null && player.hp >= 0)
+                    .map((player) => {
+                        if (player.dragon_id) {
+                            const dragonLvls = dragonsArr
+                                .filter(dragonLvl => dragonLvl.dragon_id === player.dragon_id)
+                                .sort((a, b) => b.xp - a.xp);
+
+                            const lvl =
+                                DatabaseManager.getCurrentLvl(dragonLvls, player.commited_xp);
+
+                            if (!lvl.err) {
+                                return { ...player, lvl: lvl.lvl };
+                            }
+                        }
+
+                        return player;
+                    })
                     .reduce((allPlayers, player) => ({
                         ...allPlayers,
                         [player.id]: {
                             ...player,
                             password: undefined,
-                            next_field: player.team_id === requestAuthor.team_id ? player.next_field : undefined,
-                            next_field_name: player.team_id === requestAuthor.team_id ? player.next_field_name : undefined,
+                            next_field: player.team_id === requestAuthor.team_id
+                                ? player.next_field : undefined,
+                            next_field_name: player.team_id === requestAuthor.team_id
+                                ? player.next_field_name : undefined,
                             username: undefined,
                             starting_points: undefined,
                             hp: player.hp,
                             xp: player.commited_xp,
                             commited_xp: undefined,
+                            points: undefined,
                         },
                     }), {});
-            } else {
-                callback({ err: 'err' });
-                return;
-            }
+                } else {
+                    callback({ err: 'err' });
+                    return;
+                }
 
-            let queriesToBeDone = Object.keys(players).length;
+                let queriesToBeDone = Object.keys(players).length;
 
-            Object.keys(players).forEach((key) => {
-                this.connection.query(`SELECT * from Points WHERE player_id=${key}`, (err2, results2) => {
-                    if (err2) {
-                        console.error(err2);
-                        callback({ err: err2 });
-                        return;
-                    }
+                Object.keys(players).forEach((key) => {
+                    this.connection.query(`SELECT * from Points WHERE player_id=${key}`, (err2, results2) => {
+                        if (err2) {
+                            console.error(err2);
+                            callback({ err: err2 });
+                            return;
+                        }
 
-                    players[key].points = {};
+                        players[key].points = {};
 
-                    results2.forEach((pointsRow) => {
-                        players[key].points[pointsRow.date] = {
-                            id: pointsRow.id,
-                            points_punktualnosc: pointsRow.points_punktualnosc,
-                            points_przygotowanie: pointsRow.points_przygotowanie,
-                            points_skupienie: pointsRow.points_skupienie,
-                            points_efekt: pointsRow.points_efekt,
-                        };
+                        results2.forEach((pointsRow) => {
+                            players[key].points[pointsRow.date] = {
+                                id: pointsRow.id,
+                                points_punktualnosc: pointsRow.points_punktualnosc,
+                                points_przygotowanie: pointsRow.points_przygotowanie,
+                                points_skupienie: pointsRow.points_skupienie,
+                                points_efekt: pointsRow.points_efekt,
+                            };
+                        });
+
+                        queriesToBeDone--;
+
+                        if (queriesToBeDone === 0) {
+                            callback({ players });
+                        }
                     });
-
-                    queriesToBeDone--;
-
-                    if (queriesToBeDone === 0) {
-                        callback({ players });
-                    }
                 });
             });
         });
@@ -1128,11 +1184,11 @@ export default class DatabaseManager {
 
     getReachableFields(id, callback) {
         const query = 'SELECT Players.dragon_id, Fields.region_id, Fields.team_id, Regions.distance, ' +
-            'Players.commited_xp as xp ' +
+            'Players.commited_xp as xp, Players.last_xp_gain ' +
             'from Players ' +
             'LEFT JOIN Fields ON Fields.id = Players.current_field ' +
             'LEFT JOIN Regions on Fields.region_id = Regions.id ' +
-            `WHERE Players.id = ${mysql.escape(id)} AND Players.gained_xp > 0`;
+            `WHERE Players.id = ${mysql.escape(id)}`;
 
         this.connection.query(query, (err, results) => {
             if (err || results.length !== 1) {
@@ -1167,13 +1223,29 @@ export default class DatabaseManager {
 
                 const maxDistance = currentLvl.range;
 
+                const finalResult = {
+                    dragonLevel: {
+                        level: currentLvl.level,
+                        hp: currentLvl.hp,
+                        range: currentLvl.range,
+                        strength: currentLvl.strength,
+                        defence: currentLvl.defence,
+                    },
+                    reachableFields: [],
+                };
+
+                if (user.last_xp_gain <= 0) {
+                    callback(finalResult);
+                    return;
+                }
+
                 const query3 = 'SELECT Fields.id ' +
                     'FROM Fields ' +
                     'LEFT JOIN Regions ON Regions.id = Fields.region_id ' +
                     'LEFT JOIN (SELECT id, IF(next_field is NULL, current_field, next_field) as field_id ' +
                         `FROM Players WHERE team_id = ${user.team_id}) Team on Fields.id = Team.field_id ` +
                     `WHERE Team.field_id is NULL AND IF(Fields.team_id = ${user.team_id}, ` +
-                    `ABS(Regions.distance - ${user.distance}), Regions.distance + ${user.distance}) <= ${maxDistance}`;
+                    `ABS(Regions.distance - ${user.distance} + 1), Regions.distance + ${user.distance}) <= ${maxDistance}`;
 
                 // console.log(query3);
 
@@ -1183,14 +1255,9 @@ export default class DatabaseManager {
                         return;
                     }
 
-                    callback({ reachableFields: res3.map(field => field.id),
-                        dragonLevel: {
-                            level: currentLvl.level,
-                            hp: currentLvl.hp,
-                            range: currentLvl.range,
-                            strength: currentLvl.strength,
-                            defence: currentLvl.defence,
-                        } });
+                    finalResult.reachableFields = res3.map(field => field.id);
+
+                    callback(finalResult);
                 });
             });
         });
@@ -1225,116 +1292,269 @@ export default class DatabaseManager {
         return { lvl: possibleLvls[0] };
     }
 
-    commitPoints(callback) {
-        const query = 'SELECT Players.commited_xp, Players.dragon_id, Players.hp, Players.id, ' +
-            'SUM(Points.points_efekt) + SUM(Points.points_przygotowanie) + ' +
-            'SUM(Points.points_punktualnosc) + SUM(Points.points_skupienie) + ' +
-            'Players.starting_points as xp ' +
-            'from Players ' +
-            'LEFT JOIN Points ON Points.player_id = Players.id ' +
-            'WHERE role = "player" AND hp >= 0 ' +
-            'GROUP BY Players.id';
+    getGameState(callback) {
+        this.connection.query('SELECT value FROM GameConfig WHERE name="gameState"', (err, res) => {
+            if (err || res.length !== 1) {
+                callback({ err: 'err' });
+            } else {
+                callback({ gameState: res[0].value });
+            }
+        });
+    }
 
-        this.connection.query(query, (err, res) => {
-            if (err) {
-                callback({ err: `error in stage 1: ${err}` });
+    commitPoints(callback) {
+        this.getGameState((gameState) => {
+            if (gameState.err) {
+                callback({ err: `error in stage 0: ${gameState.err}` });
                 return;
             }
 
-            const users = res;
+            if (gameState.gameState !== 'BEFORE_ROUND') {
+                callback({ err: 'error in stage 0: invalid game state for commiting points' });
+                return;
+            }
 
-            this.connection.query('SELECT * from Dragons_leveling', (err2, res2) => {
-                if (err2) {
-                    callback({ err: `error in stage 2: ${err2}` });
+            const query = 'SELECT Players.commited_xp, Players.dragon_id, Players.hp, Players.id, ' +
+                'SUM(Points.points_efekt) + SUM(Points.points_przygotowanie) + ' +
+                'SUM(Points.points_punktualnosc) + SUM(Points.points_skupienie) + ' +
+                'Players.starting_points as xp ' +
+                'from Players ' +
+                'LEFT JOIN Points ON Points.player_id = Players.id ' +
+                'WHERE role = "player" AND hp >= 0 ' +
+                'GROUP BY Players.id';
+
+            this.connection.query(query, (err, res) => {
+                if (err) {
+                    callback({ err: `error in stage 1: ${err}` });
                     return;
                 }
 
-                const dragons = res2;
+                const users = res;
 
-                let errOccured = false;
-
-                const changes = users.map((user) => {
-                    if (errOccured) {
-                        return undefined;
-                    }
-
-                    const userOldXP = user.commited_xp;
-                    const userXP = user.xp;
-
-                    const dragonLeveling = dragons
-                        .filter(dragonLvl => dragonLvl.dragon_id === user.dragon_id)
-                        .sort((a, b) => b.xp - a.xp);
-
-                    const oldLvlObj = DatabaseManager.getCurrentLvl(dragonLeveling, userOldXP);
-                    const newLvlObj = DatabaseManager.getCurrentLvl(dragonLeveling, userXP);
-
-                    if (oldLvlObj.err || newLvlObj.err) {
-                        callback({ err: `cannot calculate dragon levels for ${user.id}` });
-                        errOccured = true;
-                        return undefined;
-                    }
-
-                    const oldLvl = oldLvlObj.lvl;
-                    const newLvl = newLvlObj.lvl;
-
-                    const userChanges = {
-                        id: user.id,
-                        commited_xp: userXP,
-                        last_xp_gain: userXP - userOldXP,
-                    };
-
-                    if (oldLvl.hp !== newLvl.hp) {
-                        userChanges.hp = user.hp + (newLvl.hp - oldLvl.hp);
-                    }
-
-                    return userChanges;
-                });
-
-                if (errOccured) {
-                    return;
-                }
-
-                let queriesToBeDone = changes.length;
-
-                this.connection.beginTransaction((trErr) => {
-                    if (trErr) {
-                        callback({ err: `error in stage 3: ${trErr}` });
+                this.connection.query('SELECT * from Dragons_leveling', (err2, res2) => {
+                    if (err2) {
+                        callback({ err: `error in stage 2: ${err2}` });
                         return;
                     }
 
-                    let trErrOccured = false;
+                    const dragons = res2;
 
-                    changes.forEach((userChange) => {
-                        const changedFields = Object.keys(userChange).filter(key => key !== 'id');
-                        const cQuery = 'UPDATE Players SET ' +
-                            `${changedFields.map(fieldId => `${fieldId}=${userChange[fieldId]}`).join(', ')} ` +
-                            `WHERE id = ${userChange.id}`;
-                        this.connection.query(cQuery, (cErr) => {
-                            if (cErr) {
-                                callback({ err: `error in stage 4: ${trErr}` });
-                                trErrOccured = true;
-                            }
+                    let errOccured = false;
 
-                            queriesToBeDone--;
+                    const changes = users.map((user) => {
+                        if (errOccured) {
+                            return undefined;
+                        }
 
-                            if (queriesToBeDone === 0) {
-                                if (trErrOccured) {
-                                    this.connection.rollback();
-                                } else {
-                                    this.connection.commit((commitErr) => {
-                                        if (commitErr) {
-                                            callback({ err: `error in stage 5: ${trErr}` });
-                                            this.connection.rollback();
-                                        } else {
-                                            callback({ ok: 'ok ' });
-                                        }
-                                    });
+                        const userOldXP = user.commited_xp;
+                        const userXP = user.xp;
+
+                        const dragonLeveling = dragons
+                            .filter(dragonLvl => dragonLvl.dragon_id === user.dragon_id)
+                            .sort((a, b) => b.xp - a.xp);
+
+                        const oldLvlObj = DatabaseManager.getCurrentLvl(dragonLeveling, userOldXP);
+                        const newLvlObj = DatabaseManager.getCurrentLvl(dragonLeveling, userXP);
+
+                        if (oldLvlObj.err || newLvlObj.err) {
+                            callback({ err: `cannot calculate dragon levels for ${user.id}` });
+                            errOccured = true;
+                            return undefined;
+                        }
+
+                        const oldLvl = oldLvlObj.lvl;
+                        const newLvl = newLvlObj.lvl;
+
+                        const userChanges = {
+                            id: user.id,
+                            commited_xp: userXP,
+                            last_xp_gain: userXP - userOldXP,
+                        };
+
+                        if (oldLvl.hp !== newLvl.hp) {
+                            userChanges.hp = user.hp + (newLvl.hp - oldLvl.hp);
+                        }
+
+                        return userChanges;
+                    });
+
+                    if (errOccured) {
+                        return;
+                    }
+
+                    let queriesToBeDone = changes.length;
+
+                    this.connection.beginTransaction((trErr) => {
+                        if (trErr) {
+                            callback({ err: `error in stage 3: ${trErr}` });
+                            return;
+                        }
+
+                        let trErrOccured = false;
+
+                        changes.forEach((userChange) => {
+                            const changedFields = Object.keys(userChange).filter(key => key !== 'id');
+                            const cQuery = 'UPDATE Players SET ' +
+                                `${changedFields.map(fieldId => `${fieldId}=${userChange[fieldId]}`).join(', ')} ` +
+                                `WHERE id = ${userChange.id}`;
+                            this.connection.query(cQuery, (cErr) => {
+                                if (cErr) {
+                                    callback({ err: `error in stage 4: ${trErr}` });
+                                    trErrOccured = true;
                                 }
-                            }
+
+                                queriesToBeDone--;
+
+                                if (queriesToBeDone === 0) {
+                                    if (trErrOccured) {
+                                        this.connection.rollback();
+                                    } else {
+                                        this.connection.query('UPDATE GameConfig SET value="DURING_ROUND" WHERE name="gameState"', (gcErr) => {
+                                            if (gcErr) {
+                                                callback({ err: `error in stage 5: ${gcErr}` });
+                                                this.connection.rollback();
+                                            } else {
+                                                this.connection.commit((commitErr) => {
+                                                    if (commitErr) {
+                                                        callback({ err: `error in stage 6: ${commitErr}` });
+                                                        this.connection.rollback();
+                                                    } else {
+                                                        callback({ ok: 'ok' });
+                                                    }
+                                                });
+                                            }
+                                        });
+                                    }
+                                }
+                            });
                         });
                     });
                 });
             });
+        });
+    }
+
+    calculateNextStep(callback) {
+        this.getGameState((gameState) => {
+            if (gameState.err) {
+                callback({ err: `error in stage 0: ${gameState.err}` });
+                return;
+            }
+
+            if (gameState.gameState !== 'BEFORE_ROUND') {
+                callback({ err: 'error in stage 0: invalid game state for finishing round' });
+                return;
+            }
+
+            const query = 'SELECT Players.commited_xp as xp, Players.dragon_id, Players.hp, Players.id, ' +
+                'Players.current_field, IF(Players.next_field is NULL, Players.current_field, Players.next_field) as next_field, ' +
+                'Players.team_id, CONCAT(Players.name, " ", Players.surname) AS name from Players ' +
+                'WHERE role = "player" AND hp >= 0 AND Players.is_resping = FALSE' +
+                'GROUP BY Players.id';
+
+            let fields = {};
+            let destFields = {};
+
+            const log = [];
+
+            // TODO kiedy ludzie kończą się respić?
+
+            this.promiseQuery(query)
+                .then((users) => {
+                    const nextFieldsPresent = users
+                        .every(user => user.next_field || user.next_field === 0);
+
+                    if (!nextFieldsPresent) {
+                        throw new Error('error in stage 1: not all players have assigned current field');
+                    }
+
+                    const dragonsPresent = users
+                        .every(user => user.dragon_id);
+
+                    if (!dragonsPresent) {
+                        throw new Error('error in stage 1: not all players have assigned dragon');
+                    }
+
+                    const teamsPresent = users
+                        .every(user => user.team_id);
+
+                    if (!teamsPresent) {
+                        throw new Error('error in stage 1: not all players have assigned team');
+                    }
+
+                    fields = users.reduce((allFields, user) => ({
+                        ...allFields,
+                        [user.next_field]: [
+                            ...[allFields.user.next_field],
+                            user,
+                        ],
+                    }), {});
+
+                    const nextFieldsOk = Object.keys(fields)
+                        .every((fieldId) => {
+                            const teams = fields[fieldId].map(user => user.team_id);
+
+                            return teams.length === (new Set(teams)).size;
+                        });
+
+                    if (!nextFieldsOk) {
+                        throw new Error('error in stage 1: players from the same team tried to go to the same field');
+                    }
+
+                    return this.promiseQuery('SELECT * FROM Dragons_leveling');
+                })
+                .then((dragonLevels) => {
+                    Object.keys(fields).forEach((fieldId) => {
+                        fields[fieldId] = fieldId[fieldId].map((user) => {
+                            const dragonLvls = dragonLevels
+                                .filter(dragonLvl => dragonLvl.dragon_id === user.dragon_id)
+                                .sort((a, b) => b.xp - a.xp);
+
+                            const lvl =
+                                DatabaseManager.getCurrentLvl(dragonLvls, user.xp);
+
+                            if (lvl.err) {
+                                throw new Error(`error in stage 2: error while getting levels for player ${user.id}`);
+                            }
+
+                            return {
+                                ...user,
+                                lvl: {
+                                    hp: lvl.hp,
+                                    level: lvl.level,
+                                    defence: lvl.defence,
+                                    strength: lvl.strength,
+                                    range: lvl.range,
+                                },
+                            };
+                        });
+                    });
+
+                    return this.promiseQuery('SELECT Fields.id, Fields.team_id, Regions.distance, ' +
+                        'CONCAT(Teams.name, " ", Regions.name) as name FROM Fields ' +
+                        'LEFT JOIN Regions ON Regions.id = Fields.region_id ' +
+                        'INNER JOIN Teams on Fields.team_id = Teams.id ' +
+                        'GROUP BY Fields.id');
+                })
+                .then((allFields) => {
+                    destFields = allFields.reduce((tmp, currentField) => ({
+                        ...tmp,
+                        [currentField.id]: {
+                            ...currentField,
+                            users: [],
+                        },
+                    }));
+
+                    fields.filter(field => field.length === 1).forEach((field) => {
+                        const user = field[0];
+                        destFields[user.next_field].users.push({ ...user });
+                        log.push(`Gracz ${user.name} dociera na pole ${destFields[user.next_field].name} bez szwanku`);
+                    });
+                })
+                .catch((err) => {
+                    console.warn(err);
+                    callback({ err });
+                });
         });
     }
 }
