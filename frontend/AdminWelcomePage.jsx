@@ -47,7 +47,20 @@ export default class AdminWelcomePage extends Component {
                 };
                 xhr.send();
             },
-
+            DURING_ROUND: () => {
+                const xhr = new XMLHttpRequest();
+                xhr.open('GET', '/finish_round', true);
+                xhr.onload = () => {
+                    const result = JSON.parse(xhr.responseText);
+                    if (result.ok !== undefined) {
+                        this.props.databaseObjects.refreshDatabase('config');
+                        this.props.databaseObjects.refreshDatabase('users');
+                    } else {
+                        this.setState({ error: result.err });
+                    }
+                };
+                xhr.send();
+            },
         };
 
         const { error } = this.state;
@@ -56,10 +69,10 @@ export default class AdminWelcomePage extends Component {
             <div style={{ textAlign: 'center' }}>
                 <h2>Aktualny stan gry: </h2>
                 <h4>{gameStates[gameState]}</h4>
-                {error && <Alert bsStyle="danger">{error}</Alert>}
+                {error && <Alert bsStyle="danger">{error.toString()}</Alert>}
                 <button
                     className="btn btn-success main-btn"
-                    disabled={error}
+                    // disabled={error}
                     onClick={btnActions[gameState]}
                 >
                     {btnTexts[gameState]}

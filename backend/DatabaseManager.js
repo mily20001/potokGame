@@ -1441,15 +1441,16 @@ export default class DatabaseManager {
                 return;
             }
 
-            if (gameState.gameState !== 'BEFORE_ROUND') {
+            if (gameState.gameState !== 'DURING_ROUND') {
                 callback({ err: 'error in stage 0: invalid game state for finishing round' });
                 return;
             }
 
             const query = 'SELECT Players.commited_xp as xp, Players.dragon_id, Players.hp, Players.id, ' +
                 'Players.current_field, IF(Players.next_field is NULL, Players.current_field, Players.next_field) as next_field, ' +
+                'IF(Players.next_field is NULL, FALSE, TRUE) as is_active, ' +
                 'Players.team_id, CONCAT(Players.name, " ", Players.surname) AS name from Players ' +
-                'WHERE role = "player" AND hp >= 0 AND Players.is_resping = FALSE' +
+                'WHERE role = "player" AND hp >= 0 AND Players.is_resping = FALSE ' +
                 'GROUP BY Players.id';
 
             let fields = {};
@@ -1485,7 +1486,7 @@ export default class DatabaseManager {
                     fields = users.reduce((allFields, user) => ({
                         ...allFields,
                         [user.next_field]: [
-                            ...[allFields.user.next_field],
+                            ...(allFields[user.next_field] ? allFields[user.next_field] : []),
                             user,
                         ],
                     }), {});
@@ -1505,7 +1506,7 @@ export default class DatabaseManager {
                 })
                 .then((dragonLevels) => {
                     Object.keys(fields).forEach((fieldId) => {
-                        fields[fieldId] = fieldId[fieldId].map((user) => {
+                        fields[fieldId] = fields[fieldId].map((user) => {
                             const dragonLvls = dragonLevels
                                 .filter(dragonLvl => dragonLvl.dragon_id === user.dragon_id)
                                 .sort((a, b) => b.xp - a.xp);
@@ -1520,11 +1521,11 @@ export default class DatabaseManager {
                             return {
                                 ...user,
                                 lvl: {
-                                    hp: lvl.hp,
-                                    level: lvl.level,
-                                    defence: lvl.defence,
-                                    strength: lvl.strength,
-                                    range: lvl.range,
+                                    hp: lvl.lvl.hp,
+                                    level: lvl.lvl.level,
+                                    defence: lvl.lvl.defence,
+                                    strength: lvl.lvl.strength,
+                                    range: lvl.lvl.range,
                                 },
                             };
                         });
@@ -1543,13 +1544,212 @@ export default class DatabaseManager {
                             ...currentField,
                             users: [],
                         },
-                    }));
+                    }), {});
 
-                    fields.filter(field => field.length === 1).forEach((field) => {
-                        const user = field[0];
+                    Object.keys(fields).filter(fieldId => fields[fieldId].length === 1).forEach((fieldId) => {
+                        const user = fields[fieldId][0];
                         destFields[user.next_field].users.push({ ...user });
-                        log.push(`Gracz ${user.name} dociera na pole ${destFields[user.next_field].name} bez szwanku`);
+                        const action = user.is_active ? 'dociera na pole' : 'pozostaje na polu';
+                        log.push(`Gracz ${user.name} ${action} ${destFields[user.next_field].name}${user.is_active ? ' bez szwanku' : ''}`);
                     });
+
+                    /* eslint no-param-reassign: "warn" */
+                    function shuffle(a) {
+                        for (let i = a.length - 1; i > 0; i--) {
+                            const j = Math.floor(Math.random() * (i + 1));
+                            [a[i], a[j]] = [a[j], a[i]];
+                        }
+                        return a;
+                    }
+
+                    const fieldsToProcess = Object.keys(fields)
+                        .map(fieldId => fields[fieldId])
+                        .filter(field => field.length > 1);
+
+                    /* eslint prefer-spread: "warn" */
+                    const fieldsOrder = shuffle(Array(...{ length: fieldsToProcess.length })
+                        .map(Number.call, Number));
+
+                    // TODO co jak remis
+                    function fight(attacker, victim) {
+                        const def = victim.lvl.defence;
+                        let dmg = 0;
+                        for (let i = 0; i < attacker.lvl.strength; i++) {
+                            const rand = Math.floor(Math.random() * 8) + 2;
+                            if (rand >= def) {
+                                dmg++;
+                            }
+                        }
+
+                        return dmg;
+                    }
+
+                    function pairFight(attacker, victim) {
+                        const activeUser = attacker;
+                        const passiveUser = victim;
+                        log.push(`Gracz ${activeUser.name} atakuje gracza ${passiveUser.name}`);
+
+                        const dmg1 = fight(activeUser, passiveUser);
+                        passiveUser.hp -= dmg1;
+                        log.push(`Gracz ${activeUser.name} zadaje ${dmg1} obrażeń graczowi ${passiveUser.name}`);
+                        if (passiveUser.hp > 0) {
+                            const dmg2 = fight(passiveUser, activeUser);
+                            activeUser.hp -= dmg2;
+                            log.push(`Gracz ${passiveUser.name} zadaje ${dmg2} obrażeń graczowi ${activeUser.name}`);
+                            if (activeUser.hp > 0) {
+                                let winner;
+                                let looser;
+                                if (dmg1 !== dmg2) {
+                                    winner = dmg1 > dmg2 ? activeUser : passiveUser;
+                                    looser = dmg1 > dmg2 ? passiveUser : activeUser;
+                                } else {
+                                    // TODO !!!!
+                                }
+
+                                return { winner, looser };
+                            }
+                                // log.push(`Gracz ${activeUser.name} umiera`);
+                            return { winner: passiveUser, looser: activeUser };
+                        }
+                            // log.push(`Gracz ${passiveUser.name} umiera`);
+                        return { winner: activeUser, looser: passiveUser };
+                    }
+
+                    function getFortress(player) {
+                        const curField = player.current_field;
+                        const curFieldTeam = destFields[curField].team_id;
+
+                        const furthest = Math.max(...Object.keys(destFields).map(fieldId => destFields[fieldId].distance));
+
+                        const possibleFields = Object.keys(destFields)
+                            .filter(fieldId => destFields[fieldId].distance === furthest
+                                && destFields[fieldId].team_id === curFieldTeam);
+
+                        return possibleFields[0];
+                    }
+
+                    function getClosestFreeFieldId(player) {
+                        const curField = player.current_field;
+                        const curFieldTeam = destFields[curField].team_id;
+                        const curFieldRegDist = destFields[curField].distance;
+                        const isHomeField = destFields[curField].team_id === player.team_id;
+
+                        if (isHomeField) {
+                            const possibleFields = Object.keys(destFields)
+                                .filter(fieldId => destFields[fieldId].users.length === 0
+                                    && destFields[fieldId].distance >= curFieldRegDist
+                                    && destFields[fieldId].team_id === curFieldTeam);
+
+                            if (possibleFields.length === 0) {
+                                return getFortress(player);
+                            }
+
+                            let closestDist = 999999;
+                            let closestId = -1;
+
+                            possibleFields.forEach((fieldId) => {
+                                const field = destFields[fieldId];
+                                if (field.distance - curFieldRegDist < closestDist) {
+                                    closestDist = field.distance - curFieldRegDist;
+                                    closestId = field.id;
+                                }
+                            });
+
+                            return closestId;
+                        }
+
+                        const possibleFields = Object.keys(destFields)
+                            .filter(fieldId => destFields[fieldId].users.length === 0
+                                && ((destFields[fieldId].distance <= curFieldRegDist
+                                        && destFields[fieldId].team_id !== curFieldTeam)
+                                    || destFields[fieldId].team_id === curFieldTeam));
+
+                        if (possibleFields.length === 0) {
+                            return getFortress(player);
+                        }
+
+                        let closestDist = 999999;
+                        let closestId = -1;
+
+                        possibleFields.forEach((fieldId) => {
+                            const field = destFields[fieldId];
+                            const dist = field.team_id === curFieldTeam ?
+                                field.distance + curFieldRegDist
+                                :
+                                curFieldRegDist - field.distance;
+
+                            if (dist < closestDist) {
+                                closestDist = dist;
+                                closestId = field.id;
+                            }
+                        });
+
+                        return closestId;
+                    }
+
+                    fieldsOrder.forEach((fieldNum) => {
+                        const field = fieldsToProcess[fieldNum];
+                        const fieldName = destFields[field[0].next_field].name;
+                        if (field.length === 2) {
+                            let activeUser;
+                            let passiveUser;
+
+                            if (field.some(user => !user.is_active)) {
+                                activeUser = field.filter(user => user.is_active)[0];
+                                passiveUser = field.filter(user => !user.is_active)[0];
+                                log.push(`Gracz ${activeUser.name} atakuje gracza ${passiveUser.name} na polu ${fieldName}`);
+                            } else {
+                                activeUser = field[0];
+                                passiveUser = field[1];
+
+                                if (Math.random() > 0.5) {
+                                    const tmpUser = { ...activeUser};
+                                    activeUser = passiveUser;
+                                    passiveUser = tmpUser;
+                                }
+
+                                log.push(`Gracz ${activeUser.name} i ${passiveUser.name} stają do walki o pole ${fieldName}`);
+                            }
+
+                            // console.log('PairFight');
+                            // console.log(activeUser);
+                            // console.log(passiveUser);
+                            // console.log(field);
+                            // console.log(log);
+
+                            /* eslint max-len: "warn" */
+                            const { winner, looser } = pairFight(activeUser, passiveUser);
+
+                            console.log('winner', winner);
+                            console.log('looser', looser);
+
+                            destFields[winner.next_field].users.push({ ...winner });
+
+                            let looserField;
+
+                            if (looser.hp <= 0) {
+                                log.push(`Gracz ${looser.name} umiera`);
+                                looserField = getFortress(looser);
+                            } else {
+                                looserField = getClosestFreeFieldId(looser);
+                                log.push(`Gracz ${winner.name} zdobywa pole ${fieldName}`);
+                                log.push(`Gracz ${looser.name} musi cofnąć się na pole ${destFields[looserField].name}`);
+                            }
+
+                            console.log(log);
+                            console.log(looserField);
+
+                            destFields[looserField].users.push({ ...looser });
+                        } else {
+                            log.push(`Gracze ${field.map(user => user.name).join(', ')} stają do walki o ${field.name}`);
+                            throw new Error('Nieobsługiwane');
+                        }
+                    });
+
+                    // console.log(destFields);
+                    console.log(destFields[75].users[0]);
+                    console.log(log);
+                    callback({ ok: 'ok' });
                 })
                 .catch((err) => {
                     console.warn(err);

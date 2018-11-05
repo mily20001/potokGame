@@ -540,6 +540,22 @@ const server = http.createServer((req, res) => {
                     });
                 }
             });
+        } else if (req.url.substr(0, '/finish_round'.length) === '/finish_round') {
+            databaseManager.getUserFromCookie(cookies.token, (result) => {
+                if (result.err !== undefined || result.user === undefined || result.user.role !== 'admin') {
+                    res.writeHead(403);
+                    res.end();
+                } else {
+                    databaseManager.calculateNextStep((result2) => {
+                        if (result2.ok !== undefined) {
+                            res.end(JSON.stringify({ ok: 'ok' }));
+                        } else {
+                            res.writeHead(500);
+                            res.end(JSON.stringify({ err: result2.err }));
+                        }
+                    });
+                }
+            });
         } else if (req.url.substr(0, '/delete_dragon'.length) === '/delete_dragon') {
             databaseManager.getUserFromCookie(cookies.token, (result) => {
                 if (result.err !== undefined || result.user === undefined || result.user.role !== 'admin') {
