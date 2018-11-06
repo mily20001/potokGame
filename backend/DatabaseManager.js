@@ -564,7 +564,7 @@ export default class DatabaseManager {
     }
 
     getConfig(callback) {
-        this.connection.query('SELECT * FROM GameConfig', (err, results) => {
+        this.connection.query('SELECT * FROM GameConfig WHERE name <> "changesToCommit"', (err, results) => {
             if (err) {
                 console.error(err);
                 callback({ err });
@@ -1703,7 +1703,7 @@ export default class DatabaseManager {
                                 passiveUser = field[1];
 
                                 if (Math.random() > 0.5) {
-                                    const tmpUser = { ...activeUser};
+                                    const tmpUser = { ...activeUser };
                                     activeUser = passiveUser;
                                     passiveUser = tmpUser;
                                 }
@@ -1720,6 +1720,7 @@ export default class DatabaseManager {
                             /* eslint max-len: "warn" */
                             const { winner, looser } = pairFight(activeUser, passiveUser);
 
+                            console.log('log', log);
                             console.log('winner', winner);
                             console.log('looser', looser);
 
@@ -1747,13 +1748,123 @@ export default class DatabaseManager {
                     });
 
                     // console.log(destFields);
-                    console.log(destFields[75].users[0]);
-                    console.log(log);
+                    // console.log(destFields[75].users[0]);
+                    // console.log(log);
+
+                    // callback({ ok: 'ok' });
+
+                    return this.promiseQuery(`UPDATE GameConfig SET value=${mysql.escape(JSON.stringify(destFields))} WHERE name="changesToCommit"`)
+                        .then(() => this.promiseQuery(`UPDATE GameConfig SET value=${mysql.escape(JSON.stringify(log))} WHERE name="logToCommit"`))
+                        .then(() => this.promiseQuery('UPDATE GameConfig SET value="DURING_COMMIT" WHERE name="gameState"'));
+                })
+                .then(() => {
                     callback({ ok: 'ok' });
                 })
                 .catch((err) => {
-                    console.warn(err);
-                    callback({ err });
+                    const error = (err instanceof Error) ?
+                        JSON.parse(JSON.stringify(err, Object.getOwnPropertyNames(err)))
+                        : err;
+                    const fullError = {
+                        error,
+                        ctx: {
+                            log,
+                            destFields,
+                            fields,
+                        },
+                    };
+                    console.error(err);
+                    callback({ err: fullError });
+                });
+        });
+    }
+
+    commitChangesAndLog(callback) {
+        this.getGameState((gameState) => {
+            if (gameState.err) {
+                throw Error(`error in stage 0: ${gameState.err}`);
+            }
+
+            if (gameState.gameState !== 'DURING_COMMIT') {
+                throw Error('error in stage 0: invalid game state for commit');
+            }
+
+            this.promiseQuery('SELECT value, name FROM GameConfig WHERE name LIKE "%ToCommit"')
+                .then((res) => {
+                    console.log(res);
+
+                    const tmpLog = res.filter(prop => prop.name === 'logToCommit');
+                    const tmpChanges = res.filter(prop => prop.name === 'changesToCommit');
+
+                    if (!tmpLog.length || !tmpChanges.length) {
+                        throw ('error in stage 1, no changes to commit');
+                    }
+
+                    const queries = [];
+
+                    const log = JSON.parse(tmpLog[0].value);
+                    const changes = JSON.parse(tmpChanges[0].value);
+
+                    Object.keys(changes).forEach((id) => {
+                        const field = changes[id];
+                        field.users.forEach((user) => {
+                            const delta = {
+                                hp: user.hp,
+                                current_field: id,
+                                next_field: null,
+                            };
+
+                            if (delta.hp <= 0) {
+                                delta.hp = 0;
+                                delta.is_resping = true;
+                            }
+
+                            const updates = Object.keys(delta).map(key => `${key}=${mysql.escape(delta[key])}`);
+
+                            const query = `UPDATE Players SET ${updates.join(', ')} WHERE id=${user.id}`;
+
+                            queries.push(query);
+                        });
+                    });
+
+                    this.connection.beginTransaction((trErr) => {
+                        if (trErr) {
+                            throw (trErr);
+                        }
+
+                        const promiseArr = queries.map(query => this.promiseQuery(query));
+
+                        this.promiseQuery('UPDATE Players SET is_resping=FALSE WHERE is_resping=TRUE')
+                            .then(() =>
+                                this.promiseQuery(`UPDATE GameConfig SET value=${mysql.escape(JSON.stringify(log))} WHERE name="lastLog"`))
+                            .then(() => this.promiseQuery('UPDATE GameConfig SET value=NULL WHERE name="logToCommit"'))
+                            .then(() => Promise.all(promiseArr))
+                            .then(() => this.promiseQuery('UPDATE GameConfig SET value="BEFORE_ROUND" WHERE name="gameState"'))
+                            .then(() => new Promise((resolve, reject) => {
+                                this.connection.commit((err) => {
+                                    if (err) {
+                                        reject(err);
+                                    } else {
+                                        callback({ ok: 'ok' });
+                                        resolve();
+                                    }
+                                });
+                            }))
+                            .catch((err) => {
+                                this.connection.rollback();
+                                const error = (err instanceof Error) ?
+                                    JSON.parse(JSON.stringify(err, Object.getOwnPropertyNames(err)))
+                                    : err;
+                                console.error(err);
+                                callback({ err: error });
+                            });
+                    });
+                })
+                .catch((err) => {
+                    const error = (err instanceof Error) ?
+                        JSON.parse(JSON.stringify(err, Object.getOwnPropertyNames(err)))
+                        : err;
+                    console.error(err);
+                    callback({ err: error });
                 });
         });
     }

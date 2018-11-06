@@ -1,9 +1,5 @@
 import React, { Component } from 'react';
-import {
-    BrowserRouter,
-    Route,
-    Link,
-} from 'react-router-dom';
+import prettyFormat from 'pretty-format';
 import PropTypes from 'prop-types';
 import { Alert } from 'react-bootstrap';
 
@@ -17,20 +13,28 @@ export default class AdminWelcomePage extends Component {
             error: '',
         };
     }
-    // componentDidMount() {
-    //     document.title = 'Panel Administratora';
-    // }
+
+    setError(err) {
+        if (typeof err === 'string') {
+            this.setState({ error: err });
+        } else {
+            this.setState({ error: prettyFormat(err) });
+        }
+    }
+
     render() {
-        const { gameState } = this.props.databaseObjects.config;
+        const { gameState, logToCommit } = this.props.databaseObjects.config;
 
         const gameStates = {
             BEFORE_ROUND: 'Poprzednia tura zakończona, należy wpisać punkty przed rozpoczęciem następnej tury',
             DURING_ROUND: 'Trwa tura, gracze wybierają swoje ruchy',
+            DURING_COMMIT: 'Tura zakończona, oczekiwanie na zatwierdzenie zmian',
         };
 
         const btnTexts = {
             BEFORE_ROUND: 'Rozpocznij kolejną turę',
             DURING_ROUND: 'Zakończ i rozlicz aktualną turę',
+            DURING_COMMIT: 'Zatwierdź zmiany',
         };
 
         const btnActions = {
@@ -42,7 +46,7 @@ export default class AdminWelcomePage extends Component {
                     if (result.ok !== undefined) {
                         this.props.databaseObjects.refreshDatabase('config');
                     } else {
-                        this.setState({ error: result.err });
+                        this.setError(result.err);
                     }
                 };
                 xhr.send();
@@ -56,12 +60,36 @@ export default class AdminWelcomePage extends Component {
                         this.props.databaseObjects.refreshDatabase('config');
                         this.props.databaseObjects.refreshDatabase('users');
                     } else {
-                        this.setState({ error: result.err });
+                        this.setError(result.err);
+                    }
+                };
+                xhr.send();
+            },
+            DURING_COMMIT: () => {
+                const xhr = new XMLHttpRequest();
+                xhr.open('GET', '/commit_changes_and_log', true);
+                xhr.onload = () => {
+                    const result = JSON.parse(xhr.responseText);
+                    if (result.ok !== undefined) {
+                        this.props.databaseObjects.refreshDatabase('config');
+                        this.props.databaseObjects.refreshDatabase('users');
+                    } else {
+                        this.setError(result.err);
                     }
                 };
                 xhr.send();
             },
         };
+
+        let history = '';
+
+        if (gameState === 'DURING_COMMIT') {
+            try {
+                history = JSON.parse(logToCommit).join('\n');
+            } catch (e) {
+                history = prettyFormat(e);
+            }
+        }
 
         const { error } = this.state;
 
@@ -77,6 +105,12 @@ export default class AdminWelcomePage extends Component {
                 >
                     {btnTexts[gameState]}
                 </button>
+                {gameState === 'DURING_COMMIT' &&
+                    <div className="hist-box">
+                        <h5>Historia do zatwierdzenia:</h5>
+                        <pre>{history}</pre>
+                    </div>
+                }
             </div>
         );
     }
