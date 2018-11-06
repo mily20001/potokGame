@@ -59,6 +59,8 @@ export default class Login extends Component {
                 if (result.err !== undefined) {
                     this.setState({ loginError: result.err });
                     this.setState({ username: '', password: '' });
+                } else if (result.user === undefined) {
+                    throw new Error();
                 } else {
                     this.setState({ loginError: -1 });
                     NotificationManager.success('Zalogowano');

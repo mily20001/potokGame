@@ -52,6 +52,7 @@
     "node-notifier": "^5.3.0",
     "node-sass": "^4.9.4",
     "parse-multipart": "^1.0.4",
+    "pretty-format": "^23.6.0",
     "prop-types": "^15.6.2",
     "qs": "^6.5.2",
     "randomstring": "^1.1.5",
