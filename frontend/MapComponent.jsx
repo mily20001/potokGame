@@ -301,7 +301,7 @@ export default class MapComponent extends Component {
                     dragonName: user.dragon,
                     innerImageId,
                     HP: user.hp,
-                    dragonLevel: -1,
+                    dragonLevel: (user.lvl && user.lvl.level) || -1,
                     teamColor: user.team_color,
                     playerName: `${user.name} ${user.surname}`,
                     nextField,

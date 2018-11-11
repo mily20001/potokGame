@@ -82,9 +82,11 @@ export default class DatabaseManager {
     }
 
     getTeams(callback) {
-        const query = 'SELECT Teams.*, ' +
+        const query = 'SELECT Teams.*, SUM(P.gold) as gold, ' +
             'CONCAT(Players.name, " ", Players.surname) AS capitan_name ' +
-            'from Teams LEFT JOIN Players ON Teams.capitan = Players.id';
+            'from Teams LEFT JOIN Players ON Teams.capitan = Players.id ' +
+            'LEFT JOIN Players P on Teams.id = P.team_id ' +
+            'GROUP BY Teams.id';
 
         this.connection.query(query, (err, results) => {
             if (err) {
@@ -695,7 +697,7 @@ export default class DatabaseManager {
     }
 
     addPlayer({ username, password, name, surname, role, dragon_id, team_id, current_field,
-                  next_field, starting_points, id, hp }, callback) {
+                  next_field, starting_points, id, hp, gold }, callback) {
         const hash = (password !== undefined) ? bcrypt.hashSync(password, 11) : undefined;
         const user = { username,
             password: hash,
@@ -708,6 +710,7 @@ export default class DatabaseManager {
             next_field,
             starting_points,
             hp,
+            gold,
         };
 
         /* eslint camelcase: "warn" */
