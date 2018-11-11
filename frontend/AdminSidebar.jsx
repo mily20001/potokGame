@@ -61,6 +61,12 @@ export default class AdminSidebar extends Component {
                     >
                         Zarządzaj użytkownikami
                     </Link>
+                    <Link
+                        to="/admin/history"
+                        className="list-group-item sidebar-button"
+                    >
+                        Wyświetl ostatnią turę
+                    </Link>
                 </ul>
             </div>
         );

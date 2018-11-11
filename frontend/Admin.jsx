@@ -18,6 +18,7 @@ import AdminDragons from './AdminDragons';
 import Page404 from './Page404';
 import UserList from './UserList';
 import UserSettings from './UserSettings';
+import prettyFormat from 'pretty-format';
 
 export default class Admin extends Component {
     constructor() {
@@ -168,6 +169,23 @@ export default class Admin extends Component {
                                     />
                                 </div>)
                             }
+                        />
+                        <Route
+                            path="/admin/history"
+                            render={() => {
+                                let history = '';
+                                try {
+                                    history = JSON.parse(this.props.databaseObjects.config.lastLog).join('\n');
+                                } catch (e) {
+                                    history = prettyFormat(e);
+                                }
+
+                                return (<div className="container">
+                                    <div className="hist-box">
+                                        <pre>{history}</pre>
+                                    </div>
+                                </div>);
+                            }}
                         />
                         <Route component={Page404} />
                     </Switch>
