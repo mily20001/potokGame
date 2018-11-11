@@ -81,13 +81,11 @@ export default class UserSettings extends Component {
     generateFields() {
         const fields = [
             { id: 'name', label: 'Imię' },
-            { id: 'surname', label: 'Nazwisko' }
+            { id: 'surname', label: 'Nazwisko' },
         ];
 
         if (!this.props.isAdmin) {
             fields.push(
-                { id: 'name', label: 'Imię' },
-                { id: 'surname', label: 'Nazwisko' },
                 { id: 'hp', label: 'HP' },
                 { id: 'dragon', label: 'Smok' },
                 { id: 'xp', label: 'XP' },
@@ -104,7 +102,9 @@ export default class UserSettings extends Component {
                     {`${field.label}:`}
                 </div>
                 <div className="col-sm-8">
-                    {this.props.currentUser[field.id] || '-'}
+                    {this.props.currentUser[field.id]
+                    || (this.props.currentUser[field.id] === 0 && '0')
+                    || '-'}
                 </div>
             </div>
             ));

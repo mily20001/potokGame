@@ -435,7 +435,7 @@ export default class MapComponent extends Component {
                                 ref={measureRef}
                                 style={{
                                     height: this.state.isFullScreen ? '100%' :
-                                        `${window.innerHeight - (this.props.isEditable ? 150 : 90)}px`,
+                                        `${window.innerHeight - (this.props.isEditable || this.props.isNextFieldChoosable ? 150 : 90)}px`,
                                 }}
                             >
                                 {!this.state.imageReady &&
