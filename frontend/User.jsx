@@ -16,6 +16,7 @@ import './User.scss';
 import UserList from './UserList';
 import UserSettings from './UserSettings';
 import MapComponent from './MapComponent';
+import UserGameLog from './UserGameLog';
 
 export default class User extends Component {
     constructor() {
@@ -57,9 +58,20 @@ export default class User extends Component {
                 />
                 <div className="user-main-container">
                     <Switch>
-                        <Route exact path="/user" component={UserWelcomePage} />
                         <Route
-                            path="/user/dragons"
+                            exact
+                            path="/user"
+                            render={() =>
+                            (<div className="container">
+                                <UserWelcomePage
+                                    databaseObjects={this.props.databaseObjects}
+                                    currentUser={this.props.user}
+                                />
+                            </div>)
+                        }
+                        />
+                        <Route
+                            path="/user/overview/dragons"
                             render={() =>
                                 (<AdminDragons
                                     databaseObjects={this.props.databaseObjects}
@@ -68,13 +80,13 @@ export default class User extends Component {
                         />
                         <Route
                             exact
-                            path="/user/points"
+                            path="/user/overview/points"
                             render={() =>
                                 <AdminPoints databaseObjects={this.props.databaseObjects} />
                             }
                         />
                         <Route
-                            path="/user/teams"
+                            path="/user/overview/teams"
                             render={() =>
                                 (<div className="container">
                                     <AdminTeamList
@@ -85,7 +97,7 @@ export default class User extends Component {
                             }
                         />
                         <Route
-                            path="/user/players"
+                            path="/user/overview/players"
                             render={() =>
                                 (<div className="container">
                                     <UserList
@@ -110,11 +122,20 @@ export default class User extends Component {
                             exact
                             path="/user/map"
                             render={() =>
-                                <MapComponent
+                                (<MapComponent
                                     isNextFieldChoosable
                                     databaseObjects={this.props.databaseObjects}
                                     user={this.props.user}
-                                />
+                                />)
+                            }
+                        />
+                        <Route
+                            exact
+                            path="/user/previous_turn"
+                            render={() =>
+                                (<UserGameLog
+                                    databaseObjects={this.props.databaseObjects}
+                                />)
                             }
                         />
                         <Route component={Page404} />

@@ -142,6 +142,7 @@ export default class UserList extends Component {
                 [key, this.props.databaseObjects.teams[key].name]),
             },
             starting_points: { type: 'number' },
+            gold: { type: 'number' },
             current_field_name: {
                 id: 'current_field',
                 type: 'dropdown',
@@ -229,8 +230,8 @@ export default class UserList extends Component {
         }
 
         if (!this.props.compact) {
-            fields.push('team', 'dragon', 'hp', 'xp');
-            headerFields.push('Drużyna', 'Smok', 'HP', 'XP');
+            fields.push('team', 'dragon', 'hp', 'xp', 'gold');
+            headerFields.push('Drużyna', 'Smok', 'HP', 'XP', 'Złoto');
             if (this.props.isAdmin) {
                 fields.push('starting_points');
                 headerFields.push('Bonusowe XP');

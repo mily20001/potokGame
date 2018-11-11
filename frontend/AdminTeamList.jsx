@@ -58,6 +58,7 @@ export default class AdminTeamList extends Component {
                         style={{ backgroundColor: this.props.databaseObjects.teams[key].color }}
                     />
                 </td>
+                <td>{this.props.databaseObjects.teams[key].gold}</td>
                 {this.props.isEditable &&
                     <td
                         className="text-center"
@@ -84,6 +85,7 @@ export default class AdminTeamList extends Component {
                             <th>Nazwa drużyny</th>
                             <th>Kapitan</th>
                             <th>Kolor</th>
+                            <th>Złoto</th>
                             {this.props.isEditable && <th>Edytuj</th>}
                             {this.props.isEditable && <th>Usuń</th>}
                         </tr>

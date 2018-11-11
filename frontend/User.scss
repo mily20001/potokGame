@@ -8,7 +8,7 @@ $user-navbar-height: 50px;
 .user-navbar {
   height: $user-navbar-height;
   width: 100%;
-  z-index: 2;
+  z-index: 999;
   position: fixed;
   background-color: #1b8c1e;
   display: flex;
@@ -84,6 +84,36 @@ $user-tab-height: $user-navbar-height - 10;
   }
 
   & a {
+    color: white;
+  }
+}
+
+.user-navbar-dropdown-list {
+  background-color: #15191d;
+  margin-top: -2px;
+
+  & > a:hover {
+    background-color: #24282d;
+  }
+
+  & > a {
+    text-decoration: none;
+    color: white;
+    cursor: pointer;
+    display: block;
+  }
+}
+
+.user-welcome-info-row {
+  padding-bottom: 10px;
+  font-size: 20px;
+}
+
+.user-hist-box {
+  margin-top: 30px;
+  margin-bottom: 10px;
+
+  & pre {
     color: white;
   }
 }
