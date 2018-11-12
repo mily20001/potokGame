@@ -1770,8 +1770,120 @@ export default class DatabaseManager {
                             // console.log(log);
                             // console.log(looserField);
                         } else {
-                            log.push(`Gracze ${field.map(user => user.name).join(', ')} stają do walki o ${field.name}`);
-                            throw new Error('Nieobsługiwane');
+                            log.push(`Gracze ${field.map(user => user.name).join(', ')} stają do walki o ${fieldName}`);
+
+                            const logPrefix = `[Walka o ${fieldName}]`;
+                            // throw new Error('Nieobsługiwane');
+                            const fights = [];
+                            const players = field.map(user => ({ ...user, wins: 0 }));
+
+                            for (let i = 0; i < players.length; i++) {
+                                for (let j = i + 1; j < players.length; j++) {
+                                    if (!players[i].is_active) {
+                                        fights.push({
+                                            active: j,
+                                            passive: i,
+                                            winner: -1,
+                                        });
+                                    } else if (!players[j].is_active) {
+                                        fights.push({
+                                            active: i,
+                                            passive: j,
+                                            winner: -1,
+                                        });
+                                    } else if (Math.random() > 0.5) {
+                                        fights.push({
+                                            active: j,
+                                            passive: i,
+                                            winner: -1,
+                                        });
+                                    } else {
+                                        fights.push({
+                                            active: i,
+                                            passive: j,
+                                            winner: -1,
+                                        });
+                                    }
+                                }
+                            }
+
+                            fights.forEach((singleFight, index) => {
+                                const { active, passive } = singleFight;
+
+                                if (passive.hp <= 0 || active.hp <= 0) {
+                                    return;
+                                }
+
+                                if (!passive.is_active) {
+                                    log.push(`${logPrefix} Gracz ${active.name} atakuje gracza ${passive.name}`);
+                                } else {
+                                    log.push(`${logPrefix} Gracz ${active.name} staje do walki z ${passive.name}`);
+                                }
+
+                                const { winner, looser, tie } =
+                                    pairFight(players[active], players[passive]);
+
+                                const winnerId = players
+                                    .findIndex(player => player.id === winner.id);
+                                const looserId = players
+                                    .findIndex(player => player.id === looser.id);
+
+                                players[winnerId] = winner;
+                                players[looserId] = looser;
+
+                                if (!tie) {
+                                    log.push(`${logPrefix} Gracz ${winner.name} wygyrwa pojedynek z graczem ${looser.name}`);
+                                    fights[index].winner = winnerId;
+                                    players[winnerId].wins++;
+                                } else {
+                                    log.push(`${logPrefix} W pojedynek graczy ${winner.name} i ${looser.name} zakończył się remisem`);
+                                }
+
+                                if (looser.hp <= 0) {
+                                    log.push(`${logPrefix} Gracz ${looser.name} ginie`);
+                                }
+
+                                if (winner.hp <= 0) {
+                                    log.push(`${logPrefix} Gracz ${winner.name} ginie`);
+                                }
+                            });
+
+                            const alivePlayers = players
+                                .filter(player => player.hp > 0)
+                                .sort((a, b) => {
+                                    if (b.wins === a.wins) {
+                                        if (a.is_active === b.is_active) {
+                                            if (a.hp === b.hp) {
+                                                if (a.xp === b.xp) {
+                                                    return Math.random() - 0.5;
+                                                }
+                                                return b.xp - a.xp;
+                                            }
+                                            return b.hp - a.hp;
+                                        }
+                                        return a.is_active - b.is_active;
+                                    }
+                                    return b.wins - a.wins;
+                                });
+
+                            const winner = {
+                                ...alivePlayers[0],
+                                next_field:
+                                    alivePlayers[0].next_field || alivePlayers[0].current_field,
+                            };
+
+                            log.push(`${logPrefix} Gracz zdobywa pole ${fieldName}`);
+
+                            destFields[winner.next_field].users.push(winner);
+
+                            players.filter(player => player.id !== winner.id).forEach((player) => {
+                                let destFieldId = player.current_field;
+                                if (destFields[destFieldId].users.length > 0) {
+                                    destFieldId = getClosestFreeFieldId(player);
+                                }
+                                destFields[destFieldId].users.push(player);
+                                log.push(`Gracz ${player.name} musi wrócić na pole ${destFields[destFieldId].name}`);
+                            });
                         }
                     });
 
