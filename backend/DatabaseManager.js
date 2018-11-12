@@ -5,6 +5,11 @@ import crypto from 'crypto';
 import CONFIG from './config';
 import errorCodes from './errorCodes';
 
+// function hashCode(str) {
+//     return str.split('').reduce((prevHash, currVal) =>
+//         (((prevHash << 5) - prevHash) + currVal.charCodeAt(0))|0, 0);
+// }
+
 export default class DatabaseManager {
     constructor() {
         this.connection = mysql.createConnection({
@@ -27,7 +32,10 @@ export default class DatabaseManager {
         });
 
         this.promiseQuery = query => new Promise((resolve, reject) => {
+            // const hash = query.length < 200 ? query : hashCode(query);
+            // console.log(`query ${hash} started`);
             this.connection.query(query, (err, res) => {
+                // console.log(`query ${hash} done`);
                 if (err) {
                     reject(err);
                 } else {
@@ -1814,10 +1822,10 @@ export default class DatabaseManager {
                                     return;
                                 }
 
-                                if (!passive.is_active) {
-                                    log.push(`${logPrefix} Gracz ${active.name} atakuje gracza ${passive.name}`);
+                                if (!players[passive].is_active) {
+                                    log.push(`${logPrefix} Gracz ${players[active].name} atakuje gracza ${players[passive].name}`);
                                 } else {
-                                    log.push(`${logPrefix} Gracz ${active.name} staje do walki z ${passive.name}`);
+                                    log.push(`${logPrefix} Gracz ${players[active].name} staje do walki z ${players[passive].name}`);
                                 }
 
                                 const { winner, looser, tie } =
@@ -1872,7 +1880,7 @@ export default class DatabaseManager {
                                     alivePlayers[0].next_field || alivePlayers[0].current_field,
                             };
 
-                            log.push(`${logPrefix} Gracz zdobywa pole ${fieldName}`);
+                            log.push(`${logPrefix} Gracz ${winner.name} zdobywa pole ${fieldName}`);
 
                             destFields[winner.next_field].users.push(winner);
 
@@ -1882,7 +1890,7 @@ export default class DatabaseManager {
                                     destFieldId = getClosestFreeFieldId(player);
                                 }
                                 destFields[destFieldId].users.push(player);
-                                log.push(`Gracz ${player.name} musi wrócić na pole ${destFields[destFieldId].name}`);
+                                log.push(`${logPrefix} Gracz ${player.name} musi wrócić na pole ${destFields[destFieldId].name}`);
                             });
                         }
                     });
@@ -1961,14 +1969,17 @@ export default class DatabaseManager {
                                 hp: user.hp,
                                 current_field: id,
                                 next_field: null,
+                                gold: user.gold,
                             };
 
                             if (delta.hp <= 0) {
                                 delta.hp = 0;
-                                delta.is_resping = true;
+                                delta.is_resping = 1;
                             }
 
                             const updates = Object.keys(delta).map(key => `${key}=${mysql.escape(delta[key])}`);
+
+                            console.log(updates);
 
                             const query = `UPDATE Players SET ${updates.join(', ')} WHERE id=${user.id}`;
 
@@ -1981,13 +1992,11 @@ export default class DatabaseManager {
                             throw (trErr);
                         }
 
-                        const promiseArr = queries.map(query => this.promiseQuery(query));
-
-                        this.promiseQuery('UPDATE Players SET is_resping=FALSE WHERE is_resping=TRUE')
+                        this.promiseQuery('UPDATE Players SET is_resping=0 WHERE is_resping=1')
                             .then(() =>
                                 this.promiseQuery(`UPDATE GameConfig SET value=${mysql.escape(JSON.stringify(log))} WHERE name="lastLog"`))
                             .then(() => this.promiseQuery('UPDATE GameConfig SET value=NULL WHERE name="logToCommit"'))
-                            .then(() => Promise.all(promiseArr))
+                            .then(() => Promise.all(queries.map(query => this.promiseQuery(query))))
                             .then(() => this.promiseQuery('UPDATE GameConfig SET value="BEFORE_ROUND" WHERE name="gameState"'))
                             .then(() => new Promise((resolve, reject) => {
                                 this.connection.commit((err) => {
