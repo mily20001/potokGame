@@ -1451,7 +1451,7 @@ export default class DatabaseManager {
 
             const query = 'SELECT Players.commited_xp as xp, Players.dragon_id, Players.hp, Players.id, ' +
                 'Players.current_field, IF(Players.next_field is NULL, Players.current_field, Players.next_field) as next_field, ' +
-                'IF(Players.next_field is NULL, FALSE, TRUE) as is_active, ' +
+                'IF(Players.next_field is NULL, FALSE, TRUE) as is_active, Players.gold, ' +
                 'Players.team_id, CONCAT(Players.name, " ", Players.surname) AS name from Players ' +
                 'WHERE role = "player" AND hp >= 0 AND Players.is_resping = FALSE ' +
                 'GROUP BY Players.id';
@@ -1460,8 +1460,6 @@ export default class DatabaseManager {
             let destFields = {};
 
             const log = [];
-
-            // TODO kiedy ludzie kończą się respić?
 
             this.promiseQuery(query)
                 .then((users) => {
@@ -1614,14 +1612,13 @@ export default class DatabaseManager {
                     }
 
                     function getFortress(player) {
-                        const curField = player.current_field;
-                        const curFieldTeam = destFields[curField].team_id;
+                        const teamId = player.team_id;
 
                         const furthest = Math.max(...Object.keys(destFields).map(fieldId => destFields[fieldId].distance));
 
                         const possibleFields = Object.keys(destFields)
                             .filter(fieldId => destFields[fieldId].distance === furthest
-                                && destFields[fieldId].team_id === curFieldTeam);
+                                && destFields[fieldId].team_id === teamId);
 
                         return possibleFields[0];
                     }
@@ -1708,7 +1705,7 @@ export default class DatabaseManager {
                                     passiveUser = tmpUser;
                                 }
 
-                                log.push(`Gracz ${activeUser.name} i ${passiveUser.name} stają do walki o pole ${fieldName}`);
+                                log.push(`Gracze ${activeUser.name} i ${passiveUser.name} stają do walki o pole ${fieldName}`);
                             }
 
                             // console.log('PairFight');
@@ -1746,17 +1743,19 @@ export default class DatabaseManager {
                                     log.push(`Gracz ${looser.name} umiera`);
                                     looserField = getFortress(looser);
                                 } else {
-                                    looserField = getClosestFreeFieldId(looser);
-                                    // log.push(`Gracz ${looser.name} musi cofnąć się na pole ${destFields[looserField].name}`);
+                                    looserField = looser.current_field;
+                                    if (destFields[looserField].users.length > 0) {
+                                        looserField = getClosestFreeFieldId(looser);
+                                    }
                                 }
                             }
 
                             if (winnerField === winner.next_field) {
                                 log.push(`Gracz ${winner.name} zdobywa pole ${destFields[winnerField].name}`);
                             } else if (winnerField === winner.current_field) {
-                                log.push(`Gracz ${winner.name} pozostaje na polu ${destFields[winnerField].name}`)
+                                log.push(`Gracz ${winner.name} pozostaje na polu ${destFields[winnerField].name}`);
                             } else {
-                                log.push(`Gracz ${winner.name} musi cofnąć się na pole ${destFields[winnerField].name}`)
+                                log.push(`Gracz ${winner.name} musi cofnąć się na pole ${destFields[winnerField].name}`);
                             }
 
                             if (looserField !== looser.current_field) {
@@ -1770,11 +1769,20 @@ export default class DatabaseManager {
 
                             // console.log(log);
                             // console.log(looserField);
-
                         } else {
                             log.push(`Gracze ${field.map(user => user.name).join(', ')} stają do walki o ${field.name}`);
                             throw new Error('Nieobsługiwane');
                         }
+                    });
+
+                    Object.keys(destFields).forEach((key) => {
+                        const users = destFields[key].users;
+                        destFields[key].users = users.map(user => ({
+                            ...user,
+                            gold:
+                                (user.gold ? parseInt(user.gold, 10) : 0)
+                                + (destFields[key].team_id === user.team_id ? 0 : 1),
+                        }));
                     });
 
                     // console.log(destFields);
@@ -1826,7 +1834,7 @@ export default class DatabaseManager {
                     const tmpChanges = res.filter(prop => prop.name === 'changesToCommit');
 
                     if (!tmpLog.length || !tmpChanges.length) {
-                        throw ('error in stage 1, no changes to commit');
+                        throw new Error('error in stage 1, no changes to commit');
                     }
 
                     const queries = [];
