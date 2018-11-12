@@ -5,6 +5,11 @@ import crypto from 'crypto';
 import CONFIG from './config';
 import errorCodes from './errorCodes';
 
+// function hashCode(str) {
+//     return str.split('').reduce((prevHash, currVal) =>
+//         (((prevHash << 5) - prevHash) + currVal.charCodeAt(0))|0, 0);
+// }
+
 export default class DatabaseManager {
     constructor() {
         this.connection = mysql.createConnection({
@@ -27,7 +32,10 @@ export default class DatabaseManager {
         });
 
         this.promiseQuery = query => new Promise((resolve, reject) => {
+            // const hash = query.length < 200 ? query : hashCode(query);
+            // console.log(`query ${hash} started`);
             this.connection.query(query, (err, res) => {
+                // console.log(`query ${hash} done`);
                 if (err) {
                     reject(err);
                 } else {
@@ -1451,7 +1459,7 @@ export default class DatabaseManager {
 
             const query = 'SELECT Players.commited_xp as xp, Players.dragon_id, Players.hp, Players.id, ' +
                 'Players.current_field, IF(Players.next_field is NULL, Players.current_field, Players.next_field) as next_field, ' +
-                'IF(Players.next_field is NULL, FALSE, TRUE) as is_active, ' +
+                'IF(Players.next_field is NULL, FALSE, TRUE) as is_active, Players.gold, ' +
                 'Players.team_id, CONCAT(Players.name, " ", Players.surname) AS name from Players ' +
                 'WHERE role = "player" AND hp >= 0 AND Players.is_resping = FALSE ' +
                 'GROUP BY Players.id';
@@ -1460,8 +1468,6 @@ export default class DatabaseManager {
             let destFields = {};
 
             const log = [];
-
-            // TODO kiedy ludzie kończą się respić?
 
             this.promiseQuery(query)
                 .then((users) => {
@@ -1600,16 +1606,11 @@ export default class DatabaseManager {
                             activeUser.hp -= dmg2;
                             log.push(`Gracz ${passiveUser.name} zadaje ${dmg2} obrażeń graczowi ${activeUser.name}`);
                             if (activeUser.hp > 0) {
-                                let winner;
-                                let looser;
-                                if (dmg1 !== dmg2) {
-                                    winner = dmg1 > dmg2 ? activeUser : passiveUser;
-                                    looser = dmg1 > dmg2 ? passiveUser : activeUser;
-                                } else {
-                                    // TODO !!!!
-                                }
+                                // if tie -> passive wins
+                                const winner = dmg1 > dmg2 ? activeUser : passiveUser;
+                                const looser = dmg1 > dmg2 ? passiveUser : activeUser;
 
-                                return { winner, looser };
+                                return { winner, looser, tie: dmg1 === dmg2 };
                             }
                                 // log.push(`Gracz ${activeUser.name} umiera`);
                             return { winner: passiveUser, looser: activeUser };
@@ -1619,14 +1620,13 @@ export default class DatabaseManager {
                     }
 
                     function getFortress(player) {
-                        const curField = player.current_field;
-                        const curFieldTeam = destFields[curField].team_id;
+                        const teamId = player.team_id;
 
                         const furthest = Math.max(...Object.keys(destFields).map(fieldId => destFields[fieldId].distance));
 
                         const possibleFields = Object.keys(destFields)
                             .filter(fieldId => destFields[fieldId].distance === furthest
-                                && destFields[fieldId].team_id === curFieldTeam);
+                                && destFields[fieldId].team_id === teamId);
 
                         return possibleFields[0];
                     }
@@ -1694,10 +1694,12 @@ export default class DatabaseManager {
                         const field = fieldsToProcess[fieldNum];
                         const fieldName = destFields[field[0].next_field].name;
                         if (field.length === 2) {
+                            let passiveAndActive = false;
                             let activeUser;
                             let passiveUser;
 
                             if (field.some(user => !user.is_active)) {
+                                passiveAndActive = true;
                                 activeUser = field.filter(user => user.is_active)[0];
                                 passiveUser = field.filter(user => !user.is_active)[0];
                                 log.push(`Gracz ${activeUser.name} atakuje gracza ${passiveUser.name} na polu ${fieldName}`);
@@ -1711,7 +1713,7 @@ export default class DatabaseManager {
                                     passiveUser = tmpUser;
                                 }
 
-                                log.push(`Gracz ${activeUser.name} i ${passiveUser.name} stają do walki o pole ${fieldName}`);
+                                log.push(`Gracze ${activeUser.name} i ${passiveUser.name} stają do walki o pole ${fieldName}`);
                             }
 
                             // console.log('PairFight');
@@ -1721,33 +1723,186 @@ export default class DatabaseManager {
                             // console.log(log);
 
                             /* eslint max-len: "warn" */
-                            const { winner, looser } = pairFight(activeUser, passiveUser);
+                            const { winner, looser, tie } = pairFight(activeUser, passiveUser);
 
-                            console.log('log', log);
-                            console.log('winner', winner);
-                            console.log('looser', looser);
-
-                            destFields[winner.next_field].users.push({ ...winner });
+                            // console.log('log', log);
+                            // console.log('winner', winner);
+                            // console.log('looser', looser);
+                            // console.log('tie', tie);
 
                             let looserField;
+                            let winnerField;
 
-                            if (looser.hp <= 0) {
-                                log.push(`Gracz ${looser.name} umiera`);
-                                looserField = getFortress(looser);
+                            if (tie && !passiveAndActive) {
+                                log.push(`Remis, nikt nie zdobył pola ${fieldName}`);
+                                looserField = looser.current_field;
+                                if (destFields[looserField].users.length > 0) {
+                                    looserField = getClosestFreeFieldId(looser);
+                                }
+
+                                winnerField = winner.current_field;
+                                if (destFields[winnerField].users.length > 0) {
+                                    winnerField = getClosestFreeFieldId(winner);
+                                }
                             } else {
-                                looserField = getClosestFreeFieldId(looser);
-                                log.push(`Gracz ${winner.name} zdobywa pole ${fieldName}`);
-                                log.push(`Gracz ${looser.name} musi cofnąć się na pole ${destFields[looserField].name}`);
+                                winnerField = winner.next_field;
+
+                                if (looser.hp <= 0) {
+                                    log.push(`Gracz ${looser.name} umiera`);
+                                    looserField = getFortress(looser);
+                                } else {
+                                    looserField = looser.current_field;
+                                    if (destFields[looserField].users.length > 0) {
+                                        looserField = getClosestFreeFieldId(looser);
+                                    }
+                                }
                             }
 
-                            console.log(log);
-                            console.log(looserField);
+                            if (winnerField === winner.next_field) {
+                                log.push(`Gracz ${winner.name} zdobywa pole ${destFields[winnerField].name}`);
+                            } else if (winnerField === winner.current_field) {
+                                log.push(`Gracz ${winner.name} pozostaje na polu ${destFields[winnerField].name}`);
+                            } else {
+                                log.push(`Gracz ${winner.name} musi cofnąć się na pole ${destFields[winnerField].name}`);
+                            }
 
+                            if (looserField !== looser.current_field) {
+                                log.push(`Gracz ${looser.name} musi cofnąć się na pole ${destFields[looserField].name}`);
+                            } else {
+                                log.push(`Gracz ${looser.name} pozostaje na polu ${destFields[looserField].name}`);
+                            }
+
+                            destFields[winnerField].users.push({ ...winner });
                             destFields[looserField].users.push({ ...looser });
+
+                            // console.log(log);
+                            // console.log(looserField);
                         } else {
-                            log.push(`Gracze ${field.map(user => user.name).join(', ')} stają do walki o ${field.name}`);
-                            throw new Error('Nieobsługiwane');
+                            log.push(`Gracze ${field.map(user => user.name).join(', ')} stają do walki o ${fieldName}`);
+
+                            const logPrefix = `[Walka o ${fieldName}]`;
+                            // throw new Error('Nieobsługiwane');
+                            const fights = [];
+                            const players = field.map(user => ({ ...user, wins: 0 }));
+
+                            for (let i = 0; i < players.length; i++) {
+                                for (let j = i + 1; j < players.length; j++) {
+                                    if (!players[i].is_active) {
+                                        fights.push({
+                                            active: j,
+                                            passive: i,
+                                            winner: -1,
+                                        });
+                                    } else if (!players[j].is_active) {
+                                        fights.push({
+                                            active: i,
+                                            passive: j,
+                                            winner: -1,
+                                        });
+                                    } else if (Math.random() > 0.5) {
+                                        fights.push({
+                                            active: j,
+                                            passive: i,
+                                            winner: -1,
+                                        });
+                                    } else {
+                                        fights.push({
+                                            active: i,
+                                            passive: j,
+                                            winner: -1,
+                                        });
+                                    }
+                                }
+                            }
+
+                            fights.forEach((singleFight, index) => {
+                                const { active, passive } = singleFight;
+
+                                if (passive.hp <= 0 || active.hp <= 0) {
+                                    return;
+                                }
+
+                                if (!players[passive].is_active) {
+                                    log.push(`${logPrefix} Gracz ${players[active].name} atakuje gracza ${players[passive].name}`);
+                                } else {
+                                    log.push(`${logPrefix} Gracz ${players[active].name} staje do walki z ${players[passive].name}`);
+                                }
+
+                                const { winner, looser, tie } =
+                                    pairFight(players[active], players[passive]);
+
+                                const winnerId = players
+                                    .findIndex(player => player.id === winner.id);
+                                const looserId = players
+                                    .findIndex(player => player.id === looser.id);
+
+                                players[winnerId] = winner;
+                                players[looserId] = looser;
+
+                                if (!tie) {
+                                    log.push(`${logPrefix} Gracz ${winner.name} wygyrwa pojedynek z graczem ${looser.name}`);
+                                    fights[index].winner = winnerId;
+                                    players[winnerId].wins++;
+                                } else {
+                                    log.push(`${logPrefix} W pojedynek graczy ${winner.name} i ${looser.name} zakończył się remisem`);
+                                }
+
+                                if (looser.hp <= 0) {
+                                    log.push(`${logPrefix} Gracz ${looser.name} ginie`);
+                                }
+
+                                if (winner.hp <= 0) {
+                                    log.push(`${logPrefix} Gracz ${winner.name} ginie`);
+                                }
+                            });
+
+                            const alivePlayers = players
+                                .filter(player => player.hp > 0)
+                                .sort((a, b) => {
+                                    if (b.wins === a.wins) {
+                                        if (a.is_active === b.is_active) {
+                                            if (a.hp === b.hp) {
+                                                if (a.xp === b.xp) {
+                                                    return Math.random() - 0.5;
+                                                }
+                                                return b.xp - a.xp;
+                                            }
+                                            return b.hp - a.hp;
+                                        }
+                                        return a.is_active - b.is_active;
+                                    }
+                                    return b.wins - a.wins;
+                                });
+
+                            const winner = {
+                                ...alivePlayers[0],
+                                next_field:
+                                    alivePlayers[0].next_field || alivePlayers[0].current_field,
+                            };
+
+                            log.push(`${logPrefix} Gracz ${winner.name} zdobywa pole ${fieldName}`);
+
+                            destFields[winner.next_field].users.push(winner);
+
+                            players.filter(player => player.id !== winner.id).forEach((player) => {
+                                let destFieldId = player.current_field;
+                                if (destFields[destFieldId].users.length > 0) {
+                                    destFieldId = getClosestFreeFieldId(player);
+                                }
+                                destFields[destFieldId].users.push(player);
+                                log.push(`${logPrefix} Gracz ${player.name} musi wrócić na pole ${destFields[destFieldId].name}`);
+                            });
                         }
+                    });
+
+                    Object.keys(destFields).forEach((key) => {
+                        const users = destFields[key].users;
+                        destFields[key].users = users.map(user => ({
+                            ...user,
+                            gold:
+                                (user.gold ? parseInt(user.gold, 10) : 0)
+                                + (destFields[key].team_id === user.team_id ? 0 : 1),
+                        }));
                     });
 
                     // console.log(destFields);
@@ -1799,7 +1954,7 @@ export default class DatabaseManager {
                     const tmpChanges = res.filter(prop => prop.name === 'changesToCommit');
 
                     if (!tmpLog.length || !tmpChanges.length) {
-                        throw ('error in stage 1, no changes to commit');
+                        throw new Error('error in stage 1, no changes to commit');
                     }
 
                     const queries = [];
@@ -1814,14 +1969,17 @@ export default class DatabaseManager {
                                 hp: user.hp,
                                 current_field: id,
                                 next_field: null,
+                                gold: user.gold,
                             };
 
                             if (delta.hp <= 0) {
                                 delta.hp = 0;
-                                delta.is_resping = true;
+                                delta.is_resping = 1;
                             }
 
                             const updates = Object.keys(delta).map(key => `${key}=${mysql.escape(delta[key])}`);
+
+                            console.log(updates);
 
                             const query = `UPDATE Players SET ${updates.join(', ')} WHERE id=${user.id}`;
 
@@ -1834,13 +1992,11 @@ export default class DatabaseManager {
                             throw (trErr);
                         }
 
-                        const promiseArr = queries.map(query => this.promiseQuery(query));
-
-                        this.promiseQuery('UPDATE Players SET is_resping=FALSE WHERE is_resping=TRUE')
+                        this.promiseQuery('UPDATE Players SET is_resping=0 WHERE is_resping=1')
                             .then(() =>
                                 this.promiseQuery(`UPDATE GameConfig SET value=${mysql.escape(JSON.stringify(log))} WHERE name="lastLog"`))
                             .then(() => this.promiseQuery('UPDATE GameConfig SET value=NULL WHERE name="logToCommit"'))
-                            .then(() => Promise.all(promiseArr))
+                            .then(() => Promise.all(queries.map(query => this.promiseQuery(query))))
                             .then(() => this.promiseQuery('UPDATE GameConfig SET value="BEFORE_ROUND" WHERE name="gameState"'))
                             .then(() => new Promise((resolve, reject) => {
                                 this.connection.commit((err) => {
