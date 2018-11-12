@@ -1600,16 +1600,11 @@ export default class DatabaseManager {
                             activeUser.hp -= dmg2;
                             log.push(`Gracz ${passiveUser.name} zadaje ${dmg2} obrażeń graczowi ${activeUser.name}`);
                             if (activeUser.hp > 0) {
-                                let winner;
-                                let looser;
-                                if (dmg1 !== dmg2) {
-                                    winner = dmg1 > dmg2 ? activeUser : passiveUser;
-                                    looser = dmg1 > dmg2 ? passiveUser : activeUser;
-                                } else {
-                                    // TODO !!!!
-                                }
+                                // if tie -> passive wins
+                                const winner = dmg1 > dmg2 ? activeUser : passiveUser;
+                                const looser = dmg1 > dmg2 ? passiveUser : activeUser;
 
-                                return { winner, looser };
+                                return { winner, looser, tie: dmg1 === dmg2 };
                             }
                                 // log.push(`Gracz ${activeUser.name} umiera`);
                             return { winner: passiveUser, looser: activeUser };
@@ -1694,10 +1689,12 @@ export default class DatabaseManager {
                         const field = fieldsToProcess[fieldNum];
                         const fieldName = destFields[field[0].next_field].name;
                         if (field.length === 2) {
+                            let passiveAndActive = false;
                             let activeUser;
                             let passiveUser;
 
                             if (field.some(user => !user.is_active)) {
+                                passiveAndActive = true;
                                 activeUser = field.filter(user => user.is_active)[0];
                                 passiveUser = field.filter(user => !user.is_active)[0];
                                 log.push(`Gracz ${activeUser.name} atakuje gracza ${passiveUser.name} na polu ${fieldName}`);
@@ -1721,29 +1718,59 @@ export default class DatabaseManager {
                             // console.log(log);
 
                             /* eslint max-len: "warn" */
-                            const { winner, looser } = pairFight(activeUser, passiveUser);
+                            const { winner, looser, tie } = pairFight(activeUser, passiveUser);
 
-                            console.log('log', log);
-                            console.log('winner', winner);
-                            console.log('looser', looser);
-
-                            destFields[winner.next_field].users.push({ ...winner });
+                            // console.log('log', log);
+                            // console.log('winner', winner);
+                            // console.log('looser', looser);
+                            // console.log('tie', tie);
 
                             let looserField;
+                            let winnerField;
 
-                            if (looser.hp <= 0) {
-                                log.push(`Gracz ${looser.name} umiera`);
-                                looserField = getFortress(looser);
+                            if (tie && !passiveAndActive) {
+                                log.push(`Remis, nikt nie zdobył pola ${fieldName}`);
+                                looserField = looser.current_field;
+                                if (destFields[looserField].users.length > 0) {
+                                    looserField = getClosestFreeFieldId(looser);
+                                }
+
+                                winnerField = winner.current_field;
+                                if (destFields[winnerField].users.length > 0) {
+                                    winnerField = getClosestFreeFieldId(winner);
+                                }
                             } else {
-                                looserField = getClosestFreeFieldId(looser);
-                                log.push(`Gracz ${winner.name} zdobywa pole ${fieldName}`);
-                                log.push(`Gracz ${looser.name} musi cofnąć się na pole ${destFields[looserField].name}`);
+                                winnerField = winner.next_field;
+
+                                if (looser.hp <= 0) {
+                                    log.push(`Gracz ${looser.name} umiera`);
+                                    looserField = getFortress(looser);
+                                } else {
+                                    looserField = getClosestFreeFieldId(looser);
+                                    // log.push(`Gracz ${looser.name} musi cofnąć się na pole ${destFields[looserField].name}`);
+                                }
                             }
 
-                            console.log(log);
-                            console.log(looserField);
+                            if (winnerField === winner.next_field) {
+                                log.push(`Gracz ${winner.name} zdobywa pole ${destFields[winnerField].name}`);
+                            } else if (winnerField === winner.current_field) {
+                                log.push(`Gracz ${winner.name} pozostaje na polu ${destFields[winnerField].name}`)
+                            } else {
+                                log.push(`Gracz ${winner.name} musi cofnąć się na pole ${destFields[winnerField].name}`)
+                            }
 
+                            if (looserField !== looser.current_field) {
+                                log.push(`Gracz ${looser.name} musi cofnąć się na pole ${destFields[looserField].name}`);
+                            } else {
+                                log.push(`Gracz ${looser.name} pozostaje na polu ${destFields[looserField].name}`);
+                            }
+
+                            destFields[winnerField].users.push({ ...winner });
                             destFields[looserField].users.push({ ...looser });
+
+                            // console.log(log);
+                            // console.log(looserField);
+
                         } else {
                             log.push(`Gracze ${field.map(user => user.name).join(', ')} stają do walki o ${field.name}`);
                             throw new Error('Nieobsługiwane');
