@@ -1731,7 +1731,17 @@ export default class DatabaseManager {
                             // console.log('tie', tie);
 
                             let looserField;
-                            let winnerField;
+                            let winnerField = winner.next_field;
+
+                            if (tie && !passiveAndActive) {
+                                winnerField = winner.current_field;
+                            }
+
+                            if (destFields[winnerField].users.length > 0) {
+                                winnerField = getClosestFreeFieldId(winner);
+                            }
+
+                            destFields[winnerField].users.push({ ...winner });
 
                             if (tie && !passiveAndActive) {
                                 log.push(`Remis, nikt nie zdobył pola ${fieldName}`);
@@ -1739,24 +1749,17 @@ export default class DatabaseManager {
                                 if (destFields[looserField].users.length > 0) {
                                     looserField = getClosestFreeFieldId(looser);
                                 }
-
-                                winnerField = winner.current_field;
-                                if (destFields[winnerField].users.length > 0) {
-                                    winnerField = getClosestFreeFieldId(winner);
-                                }
+                            } else if (looser.hp <= 0) {
+                                log.push(`Gracz ${looser.name} umiera`);
+                                looserField = getFortress(looser);
                             } else {
-                                winnerField = winner.next_field;
-
-                                if (looser.hp <= 0) {
-                                    log.push(`Gracz ${looser.name} umiera`);
-                                    looserField = getFortress(looser);
-                                } else {
-                                    looserField = looser.current_field;
-                                    if (destFields[looserField].users.length > 0) {
-                                        looserField = getClosestFreeFieldId(looser);
-                                    }
+                                looserField = looser.current_field;
+                                if (destFields[looserField].users.length > 0) {
+                                    looserField = getClosestFreeFieldId(looser);
                                 }
                             }
+
+                            destFields[looserField].users.push({ ...looser });
 
                             if (winnerField === winner.next_field) {
                                 log.push(`Gracz ${winner.name} zdobywa pole ${destFields[winnerField].name}`);
@@ -1771,9 +1774,6 @@ export default class DatabaseManager {
                             } else {
                                 log.push(`Gracz ${looser.name} pozostaje na polu ${destFields[looserField].name}`);
                             }
-
-                            destFields[winnerField].users.push({ ...winner });
-                            destFields[looserField].users.push({ ...looser });
 
                             // console.log(log);
                             // console.log(looserField);
@@ -1894,6 +1894,8 @@ export default class DatabaseManager {
                             });
                         }
                     });
+
+                    // Gold
 
                     Object.keys(destFields).forEach((key) => {
                         const users = destFields[key].users;
