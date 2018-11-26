@@ -1975,7 +1975,7 @@ export default class DatabaseManager {
                             };
 
                             if (delta.hp <= 0) {
-                                delta.hp = 0;
+                                delta.hp = user.lvl.hp || 0;
                                 delta.is_resping = 1;
                             }
 

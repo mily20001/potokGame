@@ -88,7 +88,7 @@ export default class Main extends Component {
                             [dataId]: result[dataId],
                         },
                     }, resolve);
-                    console.log(result[dataId]);
+                    // console.log(result[dataId]);
                 } else {
                     console.log(`error while getting ${dataId}`);
                     /* WELP */
@@ -122,7 +122,7 @@ export default class Main extends Component {
     }
 
     setUser(user) {
-        console.log(user);
+        // console.log(user);
         this.setState({ user }, () => {
             if (Object.keys(user).length === 0) {
                 this.history.push('/login');
@@ -178,14 +178,16 @@ export default class Main extends Component {
                     <NotificationContainer />
                     <Switch>
                         <Route exact path="/" component={App} />
-                        <Route
-                            path="/admin"
-                            render={() =>
-                            (<Admin
-                                user={this.state.user}
-                                databaseObjects={this.state.databaseObjects}
-                            />)}
-                        />
+                        {this.state.user.role === 'admin' &&
+                            <Route
+                                path="/admin"
+                                render={() =>
+                                (<Admin
+                                    user={this.state.user}
+                                    databaseObjects={this.state.databaseObjects}
+                                />)}
+                            />
+                        }
                         <Route
                             path="/user"
                             render={() =>

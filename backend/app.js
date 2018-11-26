@@ -728,19 +728,30 @@ const server = http.createServer((req, res) => {
                                 && fields.password !== undefined && fields.password[0] !== undefined
                                 && fields.role !== undefined && fields.role[0] !== undefined
                             )) {
-                            const newUser = {};
-                            Object.keys(fields).forEach((name) => {
-                                newUser[name] = fields[name][0];
-                            });
-                            databaseManager.addPlayer(newUser, (result2) => {
-                                if (result2.newUserId !== undefined) {
-                                    res.end(JSON.stringify({ ok: 'ok' }));
-                                    databaseManager.propagatePoints();
-                                } else {
-                                    res.writeHead(500);
-                                    res.end(JSON.stringify({ err: 'err' }));
-                                }
-                            });
+                            const selfEdit = (result.user.role !== 'admin' &&
+                                (fields.id !== undefined
+                                    && result.user.id === parseInt(fields.id[0], 10)));
+                            const safeFields = ['username', 'password', 'id'];
+                            if (selfEdit && !Object.keys(fields)
+                                .every(id => safeFields.includes(id))
+                            ) {
+                                res.writeHead(403);
+                                res.end();
+                            } else {
+                                const newUser = {};
+                                Object.keys(fields).forEach((name) => {
+                                    newUser[name] = fields[name][0];
+                                });
+                                databaseManager.addPlayer(newUser, (result2) => {
+                                    if (result2.newUserId !== undefined) {
+                                        res.end(JSON.stringify({ ok: 'ok' }));
+                                        databaseManager.propagatePoints();
+                                    } else {
+                                        res.writeHead(500);
+                                        res.end(JSON.stringify({ err: 'err' }));
+                                    }
+                                });
+                            }
                         } else {
                             res.writeHead(400);
                             res.end(JSON.stringify({ err: 'err' }));

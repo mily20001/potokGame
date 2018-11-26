@@ -230,8 +230,8 @@ export default class UserList extends Component {
         }
 
         if (!this.props.compact) {
-            fields.push('team', 'dragon', 'hp', 'xp', 'gold');
-            headerFields.push('Drużyna', 'Smok', 'HP', 'XP', 'Złoto');
+            fields.push('team', 'dragon', 'hp', 'xp', 'commited_xp', 'last_xp_gain', 'is_resping', 'gold');
+            headerFields.push('Drużyna', 'Smok', 'HP', 'XP', 'Zapisane XP', 'Ostatnie XP+', 'Martwy', 'Złoto');
             if (this.props.isAdmin) {
                 fields.push('starting_points');
                 headerFields.push('Bonusowe XP');
@@ -249,7 +249,7 @@ export default class UserList extends Component {
             headerFields.push('Edytuj', 'Reset hasła', 'Usuń');
         }
 
-        const header = headerFields.map(field => <th>{field}</th>);
+        const header = headerFields.map(field => <th style={{position: 'sticky', top: '50px', backgroundColor: '#212529'}}>{field}</th>);
 
         const sortedUsers = Object.keys(this.props.databaseObjects.users)
             .map(key => ({ ...this.props.databaseObjects.users[key], id: key }))
