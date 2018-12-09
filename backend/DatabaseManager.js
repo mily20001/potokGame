@@ -1693,7 +1693,13 @@ export default class DatabaseManager {
                     fieldsOrder.forEach((fieldNum) => {
                         const field = fieldsToProcess[fieldNum];
                         const fieldName = destFields[field[0].next_field].name;
-                        if (field.length === 2) {
+
+                        if (field.every(user => !user.is_active)) {
+                            field.forEach((user) => {
+                                destFields[field[0].next_field].users.push({ ...user });
+                                log.push(`Gracz ${user.name} pozostaje na polu ${fieldName}`);
+                            });
+                        } else if (field.length === 2) {
                             let passiveAndActive = false;
                             let activeUser;
                             let passiveUser;
