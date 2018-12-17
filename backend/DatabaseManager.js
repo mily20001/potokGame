@@ -1504,7 +1504,11 @@ export default class DatabaseManager {
                         .every((fieldId) => {
                             const teams = fields[fieldId].map(user => user.team_id);
 
-                            return teams.length === (new Set(teams)).size;
+                            if (teams.length === (new Set(teams)).size) {
+                                return true;
+                            }
+
+                            return fields[fieldId].every(user => !user.is_active);
                         });
 
                     if (!nextFieldsOk) {
